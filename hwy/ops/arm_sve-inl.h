@@ -1783,6 +1783,18 @@ HWY_API svbool_t IsFinite(const V v) {
   return RebindMask(d, detail::LtN(exp, hwy::MaxExponentField<T>()));
 }
 
+// ------------------------------ MulByPow2/MulByFloorPow2
+
+#define HWY_SVE_MUL_BY_POW2(BASE, CHAR, BITS, HALF, NAME, OP)       \
+  HWY_API HWY_SVE_V(BASE, BITS)                                     \
+      NAME(HWY_SVE_V(BASE, BITS) v, HWY_SVE_V(int, BITS) exp) {     \
+    return sv##OP##_##CHAR##BITS##_x(HWY_SVE_PTRUE(BITS), v, exp);  \
+  }
+
+HWY_SVE_FOREACH_F(HWY_SVE_MUL_BY_POW2, MulByPow2, scale)
+
+#undef HWY_SVE_MUL_BY_POW2
+
 // ================================================== MEMORY
 
 // ------------------------------ LoadU/MaskedLoad/LoadDup128/StoreU/Stream
