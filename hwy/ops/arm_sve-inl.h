@@ -5881,6 +5881,33 @@ HWY_API svuint32_t WidenMulPairwiseAdd(Simd<uint32_t, N, kPow2> d32,
 #endif
 }
 
+// ------------------------------ SatWidenMulPairwiseAccumulate
+template <size_t N, int kPow2>
+HWY_API svuint32_t SatWidenMulPairwiseAccumulate(Simd<int32_t, N, kPow2> d32, 
+                                      svint16_t a, svint16_t b, svint16_t sum) {
+#if HWY_SVE_HAVE_2
+  (void)d32;
+  return svqadd_s32(svqadd_s32(svmullt_s32(a, b),
+			  svmullb_s32(a, b)), sum);
+#else
+  return SaturatedAdd(SaturatedAdd(Mul(PromoteEvenTo(d32, a), PromoteEvenTo(d32, b)),
+                                    Mul(PromoteOddTo(d32, a), PromoteOddTo(d32, b))), sum);
+#endif
+}
+
+template <size_t N, int kPow2>
+HWY_API svuint64_t SatWidenMulPairwiseAccumulate(Simd<int64_t, N, kPow2> d64, 
+                                      svint32_t a, svint32_t b, svint32_t sum) {
+#if HWY_SVE_HAVE_2
+  (void)d64;
+  return svqadd_s64(svqadd_s64(svmullt_s64(a, b),
+			  svmullb_s64(a, b)), sum);
+#else
+  return SaturatedAdd(SaturatedAdd(Mul(PromoteEvenTo(d64, a), PromoteEvenTo(d64, b)),
+                                    Mul(PromoteOddTo(d64, a), PromoteOddTo(d64, b))), sum);
+#endif
+}
+
 // ------------------------------ SatWidenMulAccumFixedPoint
 
 #if HWY_SVE_HAVE_2
