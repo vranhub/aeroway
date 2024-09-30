@@ -1914,6 +1914,38 @@ HWY_API VFromD<D> LoadDup128(D d, const TFromD<D>* HWY_RESTRICT p) {
 
 #endif  // HWY_TARGET != HWY_SVE2_128
 
+// Truncate to smaller size and store
+#ifdef HWY_NATIVE_STORE_TRUNCATED
+#undef HWY_NATIVE_STORE_TRUNCATED
+#else
+#define HWY_NATIVE_STORE_TRUNCATED
+#endif
+
+#define HWY_SVE_STORE_TRUNCATED(BASE, CHAR, BITS, HALF, NAME, OP, TO_BITS)    \
+  template <size_t N, int kPow2>                                              \
+  HWY_API void NAME(HWY_SVE_V(BASE, BITS) v,                                  \
+                      const HWY_SVE_D(BASE, BITS, N, kPow2) d,                      \
+                      HWY_SVE_T(BASE, TO_BITS) * HWY_RESTRICT p) {            \
+    sv##OP##_##CHAR##BITS(detail::PTrue(d),                                   \
+        detail::NativeLanePointer(p), v);                                     \
+  }                                                                           \
+
+#define HWY_SVE_STORE_TRUNCATED_BYTE(BASE, CHAR, BITS, HALF, NAME, OP) \
+  HWY_SVE_STORE_TRUNCATED(BASE, CHAR, BITS, HALF, NAME, OP, 8)
+#define HWY_SVE_STORE_TRUNCATED_HALF(BASE, CHAR, BITS, HALF, NAME, OP) \
+  HWY_SVE_STORE_TRUNCATED(BASE, CHAR, BITS, HALF, NAME, OP, 16)
+#define HWY_SVE_STORE_TRUNCATED_WORD(BASE, CHAR, BITS, HALF, NAME, OP) \
+  HWY_SVE_STORE_TRUNCATED(BASE, CHAR, BITS, HALF, NAME, OP, 32)
+
+HWY_SVE_FOREACH_UI16(HWY_SVE_STORE_TRUNCATED_BYTE, StoreTruncated, st1b)
+HWY_SVE_FOREACH_UI32(HWY_SVE_STORE_TRUNCATED_BYTE, StoreTruncated, st1b)
+HWY_SVE_FOREACH_UI64(HWY_SVE_STORE_TRUNCATED_BYTE, StoreTruncated, st1b)
+HWY_SVE_FOREACH_UI32(HWY_SVE_STORE_TRUNCATED_HALF, StoreTruncated, st1h)
+HWY_SVE_FOREACH_UI64(HWY_SVE_STORE_TRUNCATED_HALF, StoreTruncated, st1h)
+HWY_SVE_FOREACH_UI64(HWY_SVE_STORE_TRUNCATED_WORD, StoreTruncated, st1w)
+
+#undef HWY_SVE_STORE_TRUNCATED
+
 // ------------------------------ Load/Store
 
 // SVE only requires lane alignment, not natural alignment of the entire

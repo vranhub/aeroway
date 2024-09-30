@@ -561,6 +561,49 @@ HWY_NOINLINE void TestAllStoreN() {
   ForAllTypesAndSpecial(ForPartialVectors<TestStoreN>());
 }
 
+template <typename From, typename To, class D>
+constexpr bool IsSupportedTruncation() {
+  return (sizeof(To) < sizeof(From) && Rebind<To, D>().Pow2() >= -3 &&
+          Rebind<To, D>().Pow2() + 4 >= static_cast<int>(CeilLog2(sizeof(To))));
+}
+
+struct TestStoreTruncated {
+  template <typename From, typename To, class D,
+            hwy::EnableIf<!IsSupportedTruncation<From, To, D>()>* = nullptr>
+  HWY_NOINLINE void testTo(From, To, const D) {
+    // do nothing
+  }
+
+  template <typename From, typename To, class D,
+            hwy::EnableIf<IsSupportedTruncation<From, To, D>()>* = nullptr>
+  HWY_NOINLINE void testTo(From, To, const D d) {
+    // Prepare input
+    constexpr uint32_t base = 0xFA578D00;
+    const Vec<D> src = Iota(d, base & hwy::LimitsMax<From>());
+    // Prepare expect buffer
+    const Rebind<To, D> dTo;
+    const Vec<decltype(dTo)> v_expected = Iota(dTo, base & hwy::LimitsMax<To>());
+    const size_t NFrom = Lanes(d);
+    auto expected = AllocateAligned<To>(NFrom);
+    StoreN(v_expected, dTo, expected.get(), NFrom);
+    // Prepare actual
+    auto actual = AllocateAligned<To>(NFrom);
+    StoreTruncated(src, d, actual.get());
+    HWY_ASSERT_ARRAY_EQ(expected.get(), actual.get(), NFrom);
+  }
+
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T from, const D d) {
+    testTo<T, uint8_t, D>(from, uint8_t(), d);
+    testTo<T, uint16_t, D>(from, uint16_t(), d);
+    testTo<T, uint32_t, D>(from, uint32_t(), d);
+  }
+};
+
+HWY_NOINLINE void TestAllStoreTruncated() {
+  ForU163264(ForPartialVectors<TestStoreTruncated>());
+}
+
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -580,6 +623,7 @@ HWY_EXPORT_AND_TEST_P(HwyMemoryTest, TestAllCache);
 HWY_EXPORT_AND_TEST_P(HwyMemoryTest, TestAllLoadN);
 HWY_EXPORT_AND_TEST_P(HwyMemoryTest, TestAllLoadNOr);
 HWY_EXPORT_AND_TEST_P(HwyMemoryTest, TestAllStoreN);
+HWY_EXPORT_AND_TEST_P(HwyMemoryTest, TestAllStoreTruncated);
 HWY_AFTER_TEST();
 }  // namespace hwy
 

@@ -1577,6 +1577,13 @@ aligned memory at indices which are not a multiple of the vector length):
     StoreN does not modify any memory past
     `p + HWY_MIN(Lanes(d), max_lanes_to_store) - 1`.
 
+*   <code>void **StoreTruncated**(Vec&lt;DFrom&gt; v, DFrom d, To* HWY_RESTRICT
+    p)</code>: Truncates elements of `v` to type `To` and stores on `p`. It is
+    similar to performing `TruncateTo` followed by `StoreN` where
+    `max_lanes_to_store` is `Lanes(d)`.
+
+    StoreTruncated does not modify any memory past `p + Lanes(d) - 1`.
+
 #### Interleaved
 
 *   <code>void **LoadInterleaved2**(D, const T* p, Vec&lt;D&gt;&amp; v0,

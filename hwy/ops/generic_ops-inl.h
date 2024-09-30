@@ -2574,6 +2574,27 @@ HWY_API void StoreN(VFromD<D> v, D d, T* HWY_RESTRICT p,
 
 #endif  // (defined(HWY_NATIVE_STORE_N) == defined(HWY_TARGET_TOGGLE))
 
+// ------------------------------ StoreTruncated
+#if (defined(HWY_NATIVE_STORE_TRUNCATED) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_STORE_TRUNCATED
+#undef HWY_NATIVE_STORE_TRUNCATED
+#else
+#define HWY_NATIVE_STORE_TRUNCATED
+#endif
+
+
+template <class DFrom, class To, class DTo = Rebind<To, DFrom>,
+          HWY_IF_T_SIZE_GT_D(DFrom, sizeof(To)),
+          HWY_IF_NOT_FLOAT_NOR_SPECIAL_V(VFromD<DFrom>)>
+HWY_API void StoreTruncated(VFromD<DFrom> v, const DFrom d,
+    To * HWY_RESTRICT p) {
+  DTo dsmall;
+  StoreN(TruncateTo(dsmall, v), dsmall, p, Lanes(d));
+}
+
+#endif  // (defined(HWY_NATIVE_STORE_TRUNCATED) == defined(HWY_TARGET_TOGGLE))
+
+
 // ------------------------------ Scatter
 
 #if (defined(HWY_NATIVE_SCATTER) == defined(HWY_TARGET_TOGGLE))
