@@ -676,6 +676,7 @@ set(HWY_TEST_FILES
   hwy/tests/cast_test.cc
   hwy/tests/combine_test.cc
   hwy/tests/compare_test.cc
+  hwy/tests/complex_arithmetic_test.cc
   hwy/tests/compress_test.cc
   hwy/tests/convert_test.cc
   hwy/tests/count_test.cc
