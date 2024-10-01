@@ -4543,6 +4543,25 @@ HWY_API V MulAddSub(V mul, V x, V sub_or_add) {
 
 #endif  // HWY_SVE_HAVE_2
 
+#if (defined(HWY_ADD_LOWER) == defined(HWY_TARGET_TOGGLE))
+
+#ifdef HWY_ADD_LOWER
+#undef HWY_ADD_LOWER
+#endif
+// ------------------------------ AddLower
+// template <class V>
+// HWY_API V AddLower(V a, V b) {
+//   return svinsr_n_f32(a, svlastb_f32(svptrue_b32(), b));  // works for f32
+// }
+
+#define HWY_ADD_LOWER(BASE, CHAR, BITS, HALF, NAME, OP)    \
+  HWY_API HWY_SVE_V(BASE, BITS)                                \
+      NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
+    return sv##OP##_##CHAR##BITS(a, svlastb_##CHAR##BITS(svptrue_b##BITS(), b));       \
+  }
+
+HWY_SVE_FOREACH_UI(HWY_ADD_LOWER, AddLower, insr_n)
+#endif
 // ------------------------------ PromoteTo bfloat16 (ZipLower)
 template <size_t N, int kPow2>
 HWY_API svfloat32_t PromoteTo(Simd<float32_t, N, kPow2> df32, VBF16 v) {
@@ -6015,6 +6034,33 @@ HWY_API svuint32_t WidenMulPairwiseAdd(Simd<uint32_t, N, kPow2> d32,
 #else
   return MulAdd(PromoteEvenTo(d32, a), PromoteEvenTo(d32, b),
                 Mul(PromoteOddTo(d32, a), PromoteOddTo(d32, b)));
+#endif
+}
+
+// ------------------------------ SatWidenMulPairwiseAccumulate
+template <size_t N, int kPow2>
+HWY_API svuint32_t SatWidenMulPairwiseAccumulate(Simd<int32_t, N, kPow2> d32,
+                                      svint16_t a, svint16_t b, svint16_t sum) {
+#if HWY_SVE_HAVE_2
+  (void)d32;
+  return svqadd_s32(svqadd_s32(svmullt_s32(a, b),
+			  svmullb_s32(a, b)), sum);
+#else
+  return SaturatedAdd(SaturatedAdd(Mul(PromoteEvenTo(d32, a), PromoteEvenTo(d32, b)),
+                                    Mul(PromoteOddTo(d32, a), PromoteOddTo(d32, b))), sum);
+#endif
+}
+
+template <size_t N, int kPow2>
+HWY_API svuint64_t SatWidenMulPairwiseAccumulate(Simd<int64_t, N, kPow2> d64,
+                                      svint32_t a, svint32_t b, svint32_t sum) {
+#if HWY_SVE_HAVE_2
+  (void)d64;
+  return svqadd_s64(svqadd_s64(svmullt_s64(a, b),
+			  svmullb_s64(a, b)), sum);
+#else
+  return SaturatedAdd(SaturatedAdd(Mul(PromoteEvenTo(d64, a), PromoteEvenTo(d64, b)),
+                                    Mul(PromoteOddTo(d64, a), PromoteOddTo(d64, b))), sum);
 #endif
 }
 

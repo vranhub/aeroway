@@ -986,6 +986,23 @@ HWY_API VFromD<RebindToSigned<DFromV<V>>> FloorInt(V v) {
 
 #endif  // HWY_NATIVE_CEIL_FLOOR_INT
 
+#if (defined(HWY_ADD_LOWER) == defined(HWY_TARGET_TOGGLE))
+
+#ifdef HWY_ADD_LOWER
+#undef HWY_ADD_LOWER
+#else
+#define HWY_ADD_LOWER
+#endif
+// ------------------------------ Addlower
+template <class V>
+HWY_API V AddLower(V a, V b) {
+  const DFromV<decltype(a)> d;
+  const size_t num_lanes = Lanes(d);
+  auto to_add = InsertLane(Zero(d), num_lanes - 1, ExtractLane(b, num_lanes - 1));
+  return Add(a, to_add);
+}
+#endif
+
 // ------------------------------ MulByPow2/MulByFloorPow2
 
 #if (defined(HWY_NATIVE_MUL_BY_POW2) == defined(HWY_TARGET_TOGGLE))

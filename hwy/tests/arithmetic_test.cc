@@ -239,6 +239,26 @@ struct TestNegOverflow {
   }
 };
 
+struct TestAddLower {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+#if HWY_TARGET != HWY_SCALAR
+    const Vec<D> a = Zero(d);
+    const Vec<D> b = Zero(d);
+    const Vec<D> expected_out = Zero(d);
+
+    HWY_ASSERT_VEC_EQ(d, expected_out, AddLower(a,b));
+#else
+    (void)d;
+#endif
+  }
+};
+
+HWY_NOINLINE void TestAllAddLower() {
+
+  ForAllTypes(ForPartialVectors<TestAddLower>());
+}
+
 HWY_NOINLINE void TestAllNeg() {
   ForFloatTypes(ForPartialVectors<TestFloatNeg>());
   // Always supported, even if !HWY_HAVE_FLOAT16.
@@ -320,6 +340,7 @@ HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAverage);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAbs);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllNeg);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllIntegerAbsDiff);
+HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAddLower);
 HWY_AFTER_TEST();
 }  // namespace hwy
 
