@@ -988,12 +988,12 @@ HWY_API VFromD<RebindToSigned<DFromV<V>>> FloorInt(V v) {
 
 #if (defined(HWY_ADD_LOWER) == defined(HWY_TARGET_TOGGLE))
 
+// ------------------------------ Addlower
 #ifdef HWY_ADD_LOWER
 #undef HWY_ADD_LOWER
 #else
 #define HWY_ADD_LOWER
 #endif
-// ------------------------------ Addlower
 template <class V>
 HWY_API V AddLower(V a, V b) {
   const DFromV<decltype(a)> d;
