@@ -33,7 +33,7 @@ test_x86:
   script:
     - cd build_x86
     - echo "Running x86 tests..."
-    - ctest -j
+    - ctest -j --output-on-failure
 
 test_arm8:
   stage: test
@@ -43,4 +43,4 @@ test_arm8:
     - export QEMU_LD_PREFIX=/usr/aarch64-linux-gnu
     - cd build_arm8
     - echo "Running ARMv8 tests..."
-    - ctest -j
+    - ctest -j --output-on-failure
