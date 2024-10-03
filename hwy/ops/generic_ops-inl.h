@@ -4326,6 +4326,23 @@ HWY_API V MulSub(V mul, V x, V sub) {
 }
 #endif  // HWY_NATIVE_INT_FMA
 
+// ------------------------------ MulAddLower
+#if (defined(HWY_NATIVE_MUL_ADD_LOWER) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MUL_ADD_LOWER
+#undef HWY_NATIVE_MUL_ADD_LOWER
+#else
+#define HWY_NATIVE_MUL_ADD_LOWER
+#endif
+
+template <class V>
+HWY_API V MulAddLower(const V a, const V b, const V c) {
+  const DFromV<V> d;
+  const MFromD<DFromV<V>> LowerMask = FirstN(d, 1);
+  return IfThenElse(LowerMask, MulAdd(a, b, c), a);
+}
+
+#endif // HWY_NATIVE_MUL_ADD_LOWER
+
 // ------------------------------ MulCplx* / MaskedMulCplx*
 
 #if (defined(HWY_NATIVE_CPLX) == defined(HWY_TARGET_TOGGLE))
