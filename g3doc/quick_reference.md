@@ -704,6 +704,10 @@ All other ops in this section are only available if `HWY_TARGET != HWY_SCALAR`:
     truncating it to the lower half for integer inputs. Currently unavailable on
     SVE/RVV; use the equivalent `Mul` instead.
 
+*   `V`: `f`
+    <code>V **MulRound**(V a, V b)</code>: Multiplies `a[i]` by `b[i]` and rounds
+    the result to the nearest int with ties going to even.    
+
 *   `V`: `f`, `VI`: `Vec<RebindToSigned<DFromV<V>>>` \
     <code>V **MulByPow2**(V a, VI b)</code>: Multiplies `a[i]` by `2^b[i]`.
 
