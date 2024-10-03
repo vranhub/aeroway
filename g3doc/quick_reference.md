@@ -856,6 +856,9 @@ variants are somewhat slower on Arm, and unavailable for integer inputs; if the
     potentially more efficient than `MulAdd(PromoteOddTo(d, a), PromoteOddTo(d,
     b), c)`.
 
+*   <code>V **MulAddLower**(V a, V b, V c)</code>: returns `a[0] * b[0] + c[0]` 
+    and `a[i]` in all other lanes.
+
 #### Masked arithmetic
 
 All ops in this section return `no` for `mask=false` lanes, and suppress any

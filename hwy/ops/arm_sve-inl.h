@@ -260,6 +260,12 @@ HWY_SVE_FOREACH_BF16_UNCONDITIONAL(HWY_SPECIALIZE, _, _)
     return sv##OP##_##CHAR##BITS(a, b, c);                    \
   }
 
+#define HWY_SVE_RETV_ARGMVVV(BASE, CHAR, BITS, HALF, NAME, OP)  \
+  HWY_API HWY_SVE_V(BASE, BITS)                                 \
+      NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a,                 \
+           HWY_SVE_V(BASE, BITS) b, HWY_SVE_V(BASE, BITS) c) {  \
+    return sv##OP##_##CHAR##BITS##_x(m, a, b, c);               \
+  }
 // ------------------------------ Lanes
 
 namespace detail {
@@ -1271,6 +1277,31 @@ HWY_SVE_FOREACH_F(HWY_SVE_FMA, MulSub, nmsb)
 HWY_SVE_FOREACH_F(HWY_SVE_FMA, NegMulSub, nmad)
 
 #undef HWY_SVE_FMA
+
+// ------------------------------ MaskedMulAdd
+namespace detail {
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVVV, MaskedMulAdd, mad)
+}
+
+// ------------------------------ MulAddLower
+#if (defined(HWY_NATIVE_MUL_ADD_LOWER) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MUL_ADD_LOWER
+#undef HWY_NATIVE_MUL_ADD_LOWER
+#else
+#define HWY_NATIVE_MUL_ADD_LOWER
+#endif
+
+#define HWY_SVE_MUL_ADD_LOWER(BASE, CHAR, BITS, HALF, NAME, OP)       \
+  HWY_API HWY_SVE_V(BASE, BITS)                                       \
+      NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b,          \
+           HWY_SVE_V(BASE, BITS) c) {                                 \
+    return detail::MaskedMulAdd(svptrue_pat_b##BITS(SV_VL1), a, b, c);\
+}
+
+HWY_SVE_FOREACH(HWY_SVE_MUL_ADD_LOWER, MulAddLower, _)
+#undef HWY_SVE_MUL_ADD_LOWER
+
+#endif // HWY_NATIVE_MUL_ADD_LOWER
 
 // ------------------------------ Round etc.
 
@@ -6510,6 +6541,7 @@ HWY_API V HighestSetBitIndex(V v) {
 #undef HWY_SVE_RETV_ARGVN
 #undef HWY_SVE_RETV_ARGVV
 #undef HWY_SVE_RETV_ARGVVV
+#undef HWY_SVE_RETV_ARGMVVV
 #undef HWY_SVE_T
 #undef HWY_SVE_UNDEFINED
 #undef HWY_SVE_V
