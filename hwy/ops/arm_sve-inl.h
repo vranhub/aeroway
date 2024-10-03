@@ -4543,8 +4543,6 @@ HWY_API V MulAddSub(V mul, V x, V sub_or_add) {
 
 #endif  // HWY_SVE_HAVE_2
 
-
-
 // ------------------------------ PromoteTo bfloat16 (ZipLower)
 template <size_t N, int kPow2>
 HWY_API svfloat32_t PromoteTo(Simd<float32_t, N, kPow2> df32, VBF16 v) {
@@ -4909,18 +4907,18 @@ HWY_API V IfNegativeThenElse(V v, V yes, V no) {
 
 // ------------------------------ AddLower
 
-#ifdef HWY_ADD_LOWER
-#undef HWY_ADD_LOWER
+#ifdef HWY_NATIVE_ADD_LOWER
+#undef HWY_NATIVE_ADD_LOWER
 #endif
 
-#define HWY_ADD_LOWER(BASE, CHAR, BITS, HALF, NAME, OP)    \
-  HWY_API HWY_SVE_V(BASE, BITS)                                \
-      NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
-    return sv##OP##_##CHAR##BITS##_m(HWY_SVE_PTRUE(BITS), a, svsel##_##CHAR##BITS(svptrue_pat_b##BITS(SV_VL1), b, svdup_##CHAR##BITS(0)));       \
+#define HWY_NATIVE_ADD_LOWER(BASE, CHAR, BITS, HALF, NAME, OP)                   \
+  HWY_API HWY_SVE_V(BASE, BITS)                                           \
+      NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) {            \
+    return sv##OP##_##CHAR##BITS##_m(svptrue_pat_b##BITS(SV_VL1), a, b);  \
   }
 
-HWY_SVE_FOREACH(HWY_ADD_LOWER, AddLower, add)
-#undef HWY_ADD_LOWER
+HWY_SVE_FOREACH(HWY_NATIVE_ADD_LOWER, AddLower, add)
+#undef HWY_NATIVE_ADD_LOWER
 
 // ------------------------------ IfNegativeThenNegOrUndefIfZero
 
