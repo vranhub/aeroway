@@ -251,7 +251,7 @@ struct TestAddLower {
     HWY_ASSERT(expected);
 
     for (size_t i = 0; i < N; ++i) {
-      expected[i] = ConvertScalarTo<T>(((i == 0) ? 2 : 4 * i));
+      expected[i] = ConvertScalarTo<T>((i == 0) ? 2 : (i + 1));
     }
 
     HWY_ASSERT_VEC_EQ(d, expected.get(), AddLower(a,b));
