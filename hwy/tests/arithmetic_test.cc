@@ -243,11 +243,18 @@ struct TestAddLower {
   template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
 #if HWY_TARGET != HWY_SCALAR
-    const Vec<D> a = Zero(d);
-    const Vec<D> b = Zero(d);
-    const Vec<D> expected_out = Zero(d);
+    const Vec<D> a = Iota(d, 1);
+    const Vec<D> b = Iota(d, 1);
 
-    HWY_ASSERT_VEC_EQ(d, expected_out, AddLower(a,b));
+    const size_t N = Lanes(d);
+    auto expected = AllocateAligned<T>(N);
+    HWY_ASSERT(expected);
+
+    for (size_t i = 0; i < N; ++i) {
+      expected[i] = ConvertScalarTo<T>(((i == 0) ? 2 : 4 * i));
+    }
+
+    HWY_ASSERT_VEC_EQ(d, expected.get(), AddLower(a,b));
 #else
     (void)d;
 #endif
