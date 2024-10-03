@@ -846,6 +846,10 @@ variants are somewhat slower on Arm, and unavailable for integer inputs; if the
     c))` or `MulAddSub(a, b, OddEven(c, Neg(c))`, but `MulSub(a, b, c)` is more
     efficient on some targets (including AVX2/AVX3).
 
+*   <code>V **MulSubAdd**(V a, V b, V c)</code>: returns `a[i] * b[i] + c[i]` in
+    the even lanes and `a[i] * b[i] - c[i]` in the odd lanes. Essentially, 
+    MulAddSub with `c[i]` negated.
+
 *   `V`: `bf16`, `D`: `RepartitionToWide<DFromV<V>>`, `VW`: `Vec<D>` \
     <code>VW **MulEvenAdd**(D d, V a, V b, VW c)</code>: equivalent to and
     potentially more efficient than `MulAdd(PromoteEvenTo(d, a),

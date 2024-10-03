@@ -4447,6 +4447,20 @@ HWY_API V MulAddSub(V mul, V x, V sub_or_add) {
   return MulAdd(mul, x, add);
 }
 
+// ------------------------------ MulSubAdd
+
+template <class V>
+HWY_API V MulSubAdd(V mul, V x, V sub_or_add) {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  using TNegate = If<!IsSigned<T>(), MakeSigned<T>, T>;
+
+  const D d;
+  const Rebind<TNegate, D> d_negate;
+
+  return MulAddSub(mul, x, BitCast(d, Neg(BitCast(d_negate, sub_or_add))));
+}
+
 // ------------------------------ Integer division
 #if (defined(HWY_NATIVE_INT_DIV) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_INT_DIV
