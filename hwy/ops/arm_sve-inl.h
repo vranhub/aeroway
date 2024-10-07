@@ -1615,6 +1615,26 @@ HWY_API V MaskedSatSubOr(V no, M m, V a, V b) {
 }
 #endif
 
+// ------------------------------ MulLower
+#if (defined(HWY_NATIVE_MUL_LOWER) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MUL_LOWER
+#undef HWY_NATIVE_MUL_LOWER
+#else
+#define HWY_NATIVE_MUL_LOWER
+#endif
+
+#define HWY_SVE_MUL_LOWER(BASE, CHAR, BITS, HALF, NAME, OP) \
+HWY_API HWY_SVE_V(BASE, BITS)                               \
+  NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) {  \
+    return detail::MaskedMul(svptrue_pat_b##BITS(SV_VL1), a, b);    \
+}
+
+HWY_SVE_FOREACH(HWY_SVE_MUL_LOWER, MulLower, _)
+#undef HWY_SVE_MUL_LOWER
+
+#endif // HWY_NATIVE_MUL_LOWER
+
+
 // ================================================== COMPARE
 
 // mask = f(vector, vector)

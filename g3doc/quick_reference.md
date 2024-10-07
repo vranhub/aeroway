@@ -738,6 +738,9 @@ All other ops in this section are only available if `HWY_TARGET != HWY_SCALAR`:
     <code>V **MulHigh**(V a, V b)</code>: returns the upper half of `a[i] *
     b[i]` in each lane.
 
+*   <code>V **MulLower**(V a, V b)</code>: returns `a[0] * b[0]` in the 
+    first lane and `a[i]` otherwise.
+
 *   `V`: `i16` \
     <code>V **MulFixedPoint15**(V a, V b)</code>: returns the result of
     multiplying two Q1.15 fixed-point numbers. This corresponds to doubling the
