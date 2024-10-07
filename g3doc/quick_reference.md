@@ -658,6 +658,10 @@ from left to right, of the arguments passed to `Create{2-4}`.
     <code>V **Sqrt**(V a)</code>: returns `sqrt(a[i])`.
 
 *   `V`: `{f}` \
+    <code>V **SqrtLower**(V a)</code>: returns `sqrt(a[0])` in lowest lane and 
+    `a[i]` elsewhere.
+
+*   `V`: `{f}` \
     <code>V **ApproximateReciprocalSqrt**(V a)</code>: returns an approximation
     of `1.0 / sqrt(a[i])`. `sqrt(a) ~= ApproximateReciprocalSqrt(a) * a`. x86
     and PPC provide 12-bit approximations but the error on Arm is closer to 1%.

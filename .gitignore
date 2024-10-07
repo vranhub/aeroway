@@ -3,3 +3,4 @@ docs/html/*
 docs/md/*
 docs/rst/*
 /build*
+/.vscode

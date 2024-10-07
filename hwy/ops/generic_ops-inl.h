@@ -5324,6 +5324,24 @@ HWY_API VFromD<DI32> SatWidenMulAccumFixedPoint(DI32 di32,
 
 #endif  // HWY_NATIVE_I16_SATWIDENMULACCUMFIXEDPOINT
 
+// ------------------------------ SqrtLower
+#if (defined(HWY_NATIVE_SQRT_LOWER) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_SQRT_LOWER
+#undef HWY_NATIVE_SQRT_LOWER
+#else
+#define HWY_NATIVE_SQRT_LOWER
+#endif
+
+template <class V, HWY_IF_FLOAT_V(V)>
+HWY_API V SqrtLower(V a) {
+  const DFromV<V> d;
+  const auto first_mask = FirstN(d,1);
+  return IfThenElse(first_mask, Sqrt(a), a);
+}
+
+#undef HWY_SVE_SQRT_LOWER
+#endif // HWY_NATIVE_SQRT_LOWER
+
 // ------------------------------ SumOfMulQuadAccumulate
 
 #if (defined(HWY_NATIVE_I8_I8_SUMOFMULQUADACCUMULATE) == \

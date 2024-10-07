@@ -177,6 +177,30 @@ HWY_NOINLINE void TestAllSquareRoot() {
   ForFloatTypes(ForPartialVectors<TestSquareRoot>());
 }
 
+struct TestSqrtLower {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const auto vi = Iota(d, 4);
+
+    const size_t N = Lanes(d);
+    auto expected = AllocateAligned<T>(N);
+
+    for(size_t i = 0; i < N; ++i) {
+      if (i==0) {
+        expected[i] = ConvertScalarTo<T>(2); // sqrt(4)
+      } else {
+        expected[i] = ConvertScalarTo<T>(i+4);
+      }
+    }
+
+    HWY_ASSERT_VEC_EQ(d, expected.get(), SqrtLower(vi));
+  }
+};
+
+HWY_NOINLINE void TestAllSqrtLower() {
+  ForFloatTypes(ForPartialVectors<TestSqrtLower>());
+}
+
 struct TestReciprocalSquareRoot {
   template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
@@ -519,6 +543,7 @@ HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllF32FromF16);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllDiv);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllApproximateReciprocal);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllSquareRoot);
+HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllSqrtLower);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllReciprocalSquareRoot);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllRound);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllNearestInt);
