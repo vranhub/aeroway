@@ -232,6 +232,11 @@ HWY_SVE_FOREACH_BF16_UNCONDITIONAL(HWY_SPECIALIZE, _, _)
     return sv##OP##_##CHAR##BITS(a, b);                        \
   }
 
+// vector = f(mask, vector), e.g. MaskedSqrt
+#define HWY_SVE_RETV_ARGMV(BASE, CHAR, BITS, HALF, NAME, OP)                \
+  HWY_API HWY_SVE_V(BASE, BITS) NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a) { \
+    return sv##OP##_##CHAR##BITS##_m(a, m, a);                              \
+  }
 // vector = f(vector, vector), e.g. Add
 #define HWY_SVE_RETV_ARGVV(BASE, CHAR, BITS, HALF, NAME, OP)   \
   HWY_API HWY_SVE_V(BASE, BITS)                                \
@@ -1239,6 +1244,27 @@ HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGV, ApproximateReciprocal, recpe)
 
 // ------------------------------ Sqrt
 HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGPV, Sqrt, sqrt)
+
+// ------------------------------ MaskedSqrt
+namespace detail {
+HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGMV, MaskedSqrt, sqrt)
+}
+
+// ------------------------------ SqrtLower
+#ifdef HWY_NATIVE_SQRT_LOWER
+#undef HWY_NATIVE_SQRT_LOWER
+#else
+#define HWY_NATIVE_SQRT_LOWER
+#endif
+
+#define HWY_SVE_SQRT_LOWER(BASE, CHAR, BITS, HALF, NAME, OP)  \
+  HWY_API HWY_SVE_V(BASE, BITS)                               \
+      NAME(HWY_SVE_V(BASE, BITS) a) {                         \
+    return detail::MaskedSqrt(svptrue_pat_b##BITS(SV_VL1), a);\
+}
+
+HWY_SVE_FOREACH_F(HWY_SVE_SQRT_LOWER, SqrtLower, _)
+#undef HWY_SVE_SQRT_LOWER
 
 // ------------------------------ ApproximateReciprocalSqrt
 #ifdef HWY_NATIVE_F64_APPROX_RSQRT
@@ -6512,6 +6538,7 @@ HWY_API V HighestSetBitIndex(V v) {
 #undef HWY_SVE_RETV_ARGPVV
 #undef HWY_SVE_RETV_ARGV
 #undef HWY_SVE_RETV_ARGVN
+#undef HWY_SVE_RETV_ARGMV
 #undef HWY_SVE_RETV_ARGVV
 #undef HWY_SVE_RETV_ARGVVV
 #undef HWY_SVE_RETV_ARGMVVV
