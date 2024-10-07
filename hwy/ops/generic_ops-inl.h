@@ -520,6 +520,22 @@ HWY_API V AddSub(V a, V b) {
   return Add(a, negated_even_b);
 }
 
+#if (defined(HWY_NATIVE_MUL_LOWER) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MUL_LOWER
+#undef HWY_NATIVE_MUL_LOWER
+#else
+#define HWY_NATIVE_MUL_LOWER
+#endif
+
+template <class V>
+HWY_API V MulLower(V a, V b) {
+  const DFromV<V> d;
+  const auto first_mask = FirstN(d,1);
+  return MaskedMulOr(a, first_mask, a, b);
+}
+
+#endif // HWY_NATIVE_MUL_LOWER
+
 // ------------------------------ MaskedAddOr etc.
 #if (defined(HWY_NATIVE_MASKED_ARITH) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_MASKED_ARITH
