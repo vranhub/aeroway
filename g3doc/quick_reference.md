@@ -670,6 +670,10 @@ from left to right, of the arguments passed to `Create{2-4}`.
     <code>V **ApproximateReciprocal**(V a)</code>: returns an approximation of
     `1.0 / a[i]`.
 
+*   `V`: `{f}` \
+    <code>V **GetExponent**(V v)</code>: returns the exponent of `v[i]` as a floating point value.
+    Essentially calculates `floor(log2(x))`.
+
 #### Min/Max
 
 **Note**: Min/Max corner cases are target-specific and may change. If either
