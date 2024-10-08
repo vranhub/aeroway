@@ -17,7 +17,7 @@
 
 #include <stdio.h>
 
-#include <cmath>  // std::ceil, std::floor
+#include <cmath>  // std::ceil, std::floor, std::log2
 
 #include "hwy/base.h"
 
@@ -505,6 +505,30 @@ HWY_NOINLINE void TestAllAbsDiff() {
   ForFloatTypes(ForPartialVectors<TestAbsDiff>());
 }
 
+// Test GetExponent
+struct TestGetExponent {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const size_t N = Lanes(d);
+
+    auto v = Iota(d, 1);
+
+    auto expected = AllocateAligned<T>(N);
+    HWY_ASSERT(expected);
+
+    for (size_t i = 0; i < N; ++i) {
+      auto test_val = (float)(i + 1);
+      expected[i] = ConvertScalarTo<T>(std::floor(std::log2(test_val)));
+    }
+    HWY_ASSERT_VEC_EQ(d, expected.get(), GetExponent(v));
+  }
+};
+
+HWY_NOINLINE void TestAllGetExponent() {
+  ForFloatTypes(ForPartialVectors<TestGetExponent>());
+}
+
+
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -527,6 +551,7 @@ HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllTrunc);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllCeil);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllFloor);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllAbsDiff);
+HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllGetExponent);
 HWY_AFTER_TEST();
 }  // namespace hwy
 
