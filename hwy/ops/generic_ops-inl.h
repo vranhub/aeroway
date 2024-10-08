@@ -7457,6 +7457,35 @@ HWY_API V BitShuffle(V v, VI idx) {
 
 #endif  // HWY_NATIVE_BITSHUFFLE
 
+// ------------------------------ AllOnes/AllZeros
+#if (defined(HWY_NATIVE_ALLONES) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_ALLONES
+#undef HWY_NATIVE_ALLONES
+#else
+#define HWY_NATIVE_ALLONES
+#endif
+
+template <class V>
+HWY_API bool AllOnes(V a) {
+  DFromV<V> d;
+  return AllTrue(d, Eq(Not(a), Zero(d)));
+}
+#endif  // HWY_NATIVE_ALLONES
+
+#if (defined(HWY_NATIVE_ALLZEROS) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_ALLZEROS
+#undef HWY_NATIVE_ALLZEROS
+#else
+#define HWY_NATIVE_ALLZEROS
+#endif
+
+template <class V>
+HWY_API bool AllZeros(V a) {
+  DFromV<V> d;
+  return AllTrue(d, Eq(a, Zero(d)));
+}
+#endif  // HWY_NATIVE_ALLZEROS
+
 // ================================================== Operator wrapper
 
 // SVE* and RVV currently cannot define operators and have already defined

@@ -1074,6 +1074,12 @@ Per-lane variable shifts (slow if SSSE3/SSE4, or 16-bit, or Shr i64 on AVX2):
     ```HighestValue<MakeSigned<TFromV<V>>>()``` is returned in the
     corresponding result lanes.
 
+*   <code>bool **AllOnes**(D, V v)</code>: returns whether all bits in `v[i]`
+    are set.
+
+*   <code>bool **AllZeros**(D, V v)</code>: returns whether all bits in `v[i]`
+    are clear.
+
 The following operate on individual bits within each lane. Note that the
 non-operator functions (`And` instead of `&`) must be used for floating-point
 types, and on SVE/RVV.
