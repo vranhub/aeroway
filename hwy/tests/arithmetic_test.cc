@@ -239,33 +239,6 @@ struct TestNegOverflow {
   }
 };
 
-struct TestAddLower {
-  template <typename T, class D>
-  HWY_NOINLINE void operator()(T /*unused*/, D d) {
-#if HWY_TARGET != HWY_SCALAR
-    const Vec<D> a = Iota(d, 1);
-    const Vec<D> b = Iota(d, 1);
-
-    const size_t N = Lanes(d);
-    auto expected = AllocateAligned<T>(N);
-    HWY_ASSERT(expected);
-
-    for (size_t i = 0; i < N; ++i) {
-      expected[i] = ConvertScalarTo<T>((i == 0) ? 2 : (i + 1));
-    }
-
-    HWY_ASSERT_VEC_EQ(d, expected.get(), AddLower(a,b));
-#else
-    (void)d;
-#endif
-  }
-};
-
-HWY_NOINLINE void TestAllAddLower() {
-
-  ForAllTypes(ForPartialVectors<TestAddLower>());
-}
-
 HWY_NOINLINE void TestAllNeg() {
   ForFloatTypes(ForPartialVectors<TestFloatNeg>());
   // Always supported, even if !HWY_HAVE_FLOAT16.
@@ -330,6 +303,33 @@ HWY_NOINLINE void TestAllIntegerAbsDiff() {
   ForPartialVectors<TestIntegerAbsDiff>()(int64_t());
   ForPartialVectors<TestIntegerAbsDiff>()(uint64_t());
 #endif
+}
+
+struct TestAddLower {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+#if HWY_TARGET != HWY_SCALAR
+    const Vec<D> a = Iota(d, 1);
+    const Vec<D> b = Iota(d, 2);
+
+    const size_t N = Lanes(d);
+    auto expected = AllocateAligned<T>(N);
+    HWY_ASSERT(expected);
+
+    for (size_t i = 0; i < N; ++i) {
+      expected[i] = ConvertScalarTo<T>((i == 0) ? 3 : (i + 1));
+    }
+
+    HWY_ASSERT_VEC_EQ(d, expected.get(), AddLower(a,b));
+#else
+    (void)d;
+#endif
+  }
+};
+
+HWY_NOINLINE void TestAllAddLower() {
+
+  ForAllTypes(ForPartialVectors<TestAddLower>());
 }
 
 // NOLINTNEXTLINE(google-readability-namespace-comments)
