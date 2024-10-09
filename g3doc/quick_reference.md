@@ -447,6 +447,9 @@ time-critical code:
     Potentially slow, it may be better set all elements of an aligned array and
     then `Load` it.
 
+*   <code> V **LoadHigher**(V, T* p)</code>: return a copy of the 128/f64 V with
+    the high value set to the value at p
+
 ### Getting/setting blocks
 
 *   <code>Vec<BlockDFromD<DFromV<V>>> **ExtractBlock**&lt;int kBlock&gt;(V)

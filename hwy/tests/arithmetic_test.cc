@@ -332,6 +332,45 @@ HWY_NOINLINE void TestAllAddLower() {
   ForAllTypes(ForPartialVectors<TestAddLower>());
 }
 
+struct TestLoadHigher {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+#if HWY_TARGET != HWY_SCALAR
+    const size_t N = Lanes(d);
+
+    // As this intrinsic only operates on two lanes, generate a 2 lane vector
+    auto a_lanes = AllocateAligned<T>(N);
+    for (size_t i = 0; i < 2; ++i) {
+      a_lanes[i] = ConvertScalarTo<T>(i + 1);
+    }
+    const auto a = Load(d, a_lanes.get());
+
+    // Generate a generic vector, then extract the pointer to the first entry
+    AlignedFreeUniquePtr<T[]> pa = AllocateAligned<T>(N);
+    std::fill(pa.get(), pa.get() + N, 20.0);
+    T* pointer = pa.get();
+
+    // Pass in a and the pointer
+    auto output = LoadHigher(a, pointer);
+
+    auto expected_output_lanes = AllocateAligned<T>(N);
+    expected_output_lanes[0] = ConvertScalarTo<T>(1);
+    expected_output_lanes[1] = ConvertScalarTo<T>(20);
+    const auto expected_output = Load(d, expected_output_lanes.get());
+
+    HWY_ASSERT_VEC_EQ(d, expected_output, output);
+
+#else
+    (void)d;
+#endif
+  }
+};
+
+HWY_NOINLINE void TestAllLoadHigher() {
+
+  ForPartialVectors<TestLoadHigher>()(float64_t());
+}
+
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -348,6 +387,8 @@ HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAbs);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllNeg);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllIntegerAbsDiff);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAddLower);
+HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllLoadHigher);
+
 HWY_AFTER_TEST();
 }  // namespace hwy
 
