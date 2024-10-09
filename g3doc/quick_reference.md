@@ -658,7 +658,7 @@ from left to right, of the arguments passed to `Create{2-4}`.
     <code>V **Sqrt**(V a)</code>: returns `sqrt(a[i])`.
 
 *   `V`: `{f}` \
-    <code>V **SqrtLower**(V a)</code>: returns `sqrt(a[0])` in lowest lane and 
+    <code>V **SqrtLower**(V a)</code>: returns `sqrt(a[0])` in lowest lane and
     `a[i]` elsewhere.
 
 *   `V`: `{f}` \
@@ -669,6 +669,9 @@ from left to right, of the arguments passed to `Create{2-4}`.
 *   `V`: `{f}` \
     <code>V **ApproximateReciprocal**(V a)</code>: returns an approximation of
     `1.0 / a[i]`.
+
+*   <code>V **AddLower**(V a, V b)</code>: returns `a[0] + b[0]`
+    and `a[i]` in all other lanes.
 
 *   `V`: `{f}` \
     <code>V **GetExponent**(V v)</code>: returns the exponent of `v[i]` as a floating point value.
@@ -714,7 +717,7 @@ All other ops in this section are only available if `HWY_TARGET != HWY_SCALAR`:
 
 *   `V`: `f`
     <code>V **MulRound**(V a, V b)</code>: Multiplies `a[i]` by `b[i]` and rounds
-    the result to the nearest int with ties going to even.    
+    the result to the nearest int with ties going to even.
 
 *   `V`: `f`, `VI`: `Vec<RebindToSigned<DFromV<V>>>` \
     <code>V **MulByPow2**(V a, VI b)</code>: Multiplies `a[i]` by `2^b[i]`.
@@ -746,7 +749,7 @@ All other ops in this section are only available if `HWY_TARGET != HWY_SCALAR`:
     <code>V **MulHigh**(V a, V b)</code>: returns the upper half of `a[i] *
     b[i]` in each lane.
 
-*   <code>V **MulLower**(V a, V b)</code>: returns `a[0] * b[0]` in the 
+*   <code>V **MulLower**(V a, V b)</code>: returns `a[0] * b[0]` in the
     first lane and `a[i]` otherwise.
 
 *   `V`: `i16` \
@@ -862,7 +865,7 @@ variants are somewhat slower on Arm, and unavailable for integer inputs; if the
     efficient on some targets (including AVX2/AVX3).
 
 *   <code>V **MulSubAdd**(V a, V b, V c)</code>: returns `a[i] * b[i] + c[i]` in
-    the even lanes and `a[i] * b[i] - c[i]` in the odd lanes. Essentially, 
+    the even lanes and `a[i] * b[i] - c[i]` in the odd lanes. Essentially,
     MulAddSub with `c[i]` negated.
 
 *   `V`: `bf16`, `D`: `RepartitionToWide<DFromV<V>>`, `VW`: `Vec<D>` \
@@ -875,7 +878,7 @@ variants are somewhat slower on Arm, and unavailable for integer inputs; if the
     potentially more efficient than `MulAdd(PromoteOddTo(d, a), PromoteOddTo(d,
     b), c)`.
 
-*   <code>V **MulAddLower**(V a, V b, V c)</code>: returns `a[0] * b[0] + c[0]` 
+*   <code>V **MulAddLower**(V a, V b, V c)</code>: returns `a[0] * b[0] + c[0]`
     and `a[i]` in all other lanes.
 
 #### Masked arithmetic

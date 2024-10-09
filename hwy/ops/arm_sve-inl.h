@@ -4905,6 +4905,21 @@ HWY_API V IfNegativeThenElse(V v, V yes, V no) {
   return IfThenElse(IsNegative(v), yes, no);
 }
 
+// ------------------------------ AddLower
+
+#ifdef HWY_NATIVE_ADD_LOWER
+#undef HWY_NATIVE_ADD_LOWER
+#endif
+
+#define HWY_NATIVE_ADD_LOWER(BASE, CHAR, BITS, HALF, NAME, OP)                   \
+  HWY_API HWY_SVE_V(BASE, BITS)                                           \
+      NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) {            \
+    return sv##OP##_##CHAR##BITS##_m(svptrue_pat_b##BITS(SV_VL1), a, b);  \
+  }
+
+HWY_SVE_FOREACH(HWY_NATIVE_ADD_LOWER, AddLower, add)
+#undef HWY_NATIVE_ADD_LOWER
+
 // ------------------------------ IfNegativeThenNegOrUndefIfZero
 
 #ifdef HWY_NATIVE_INTEGER_IF_NEGATIVE_THEN_NEG

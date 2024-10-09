@@ -986,6 +986,22 @@ HWY_API VFromD<RebindToSigned<DFromV<V>>> FloorInt(V v) {
 
 #endif  // HWY_NATIVE_CEIL_FLOOR_INT
 
+#if (defined(HWY_NATIVE_ADD_LOWER) == defined(HWY_TARGET_TOGGLE))
+
+// ------------------------------ Addlower
+#ifdef HWY_NATIVE_ADD_LOWER
+#undef HWY_NATIVE_ADD_LOWER
+#else
+#define HWY_NATIVE_ADD_LOWER
+#endif
+template <class V>
+HWY_API V AddLower(V a, V b) {
+  const DFromV<V> d;
+  const MFromD<DFromV<V>> LowerMask = FirstN(d, 1);
+  return IfThenElse(LowerMask, Add(a, b), a);
+}
+#endif
+
 // ------------------------------ MulByPow2/MulByFloorPow2
 
 #if (defined(HWY_NATIVE_MUL_BY_POW2) == defined(HWY_TARGET_TOGGLE))

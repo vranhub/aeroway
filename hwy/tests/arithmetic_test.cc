@@ -305,6 +305,33 @@ HWY_NOINLINE void TestAllIntegerAbsDiff() {
 #endif
 }
 
+struct TestAddLower {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+#if HWY_TARGET != HWY_SCALAR
+    const Vec<D> a = Iota(d, 1);
+    const Vec<D> b = Iota(d, 2);
+
+    const size_t N = Lanes(d);
+    auto expected = AllocateAligned<T>(N);
+    HWY_ASSERT(expected);
+
+    for (size_t i = 0; i < N; ++i) {
+      expected[i] = ConvertScalarTo<T>((i == 0) ? 3 : (i + 1));
+    }
+
+    HWY_ASSERT_VEC_EQ(d, expected.get(), AddLower(a,b));
+#else
+    (void)d;
+#endif
+  }
+};
+
+HWY_NOINLINE void TestAllAddLower() {
+
+  ForAllTypes(ForPartialVectors<TestAddLower>());
+}
+
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -320,6 +347,7 @@ HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAverage);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAbs);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllNeg);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllIntegerAbsDiff);
+HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAddLower);
 HWY_AFTER_TEST();
 }  // namespace hwy
 
