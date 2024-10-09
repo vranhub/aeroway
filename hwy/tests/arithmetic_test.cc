@@ -333,9 +333,9 @@ HWY_NOINLINE void TestAllAddLower() {
 }
 
 struct TestLoadHigher {
-  template <typename T, class D>
+  template <typename T, class D, HWY_IF_LANES_D(D, 2)>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
-#if HWY_TARGET != HWY_SCALAR
+  #if HWY_TARGET != HWY_SCALAR
     const size_t N = Lanes(d);
 
     // As this intrinsic only operates on two lanes, generate a 2 lane vector
@@ -350,20 +350,27 @@ struct TestLoadHigher {
     std::fill(pa.get(), pa.get() + N, 20.0);
     T* pointer = pa.get();
 
-    // Pass in a and the pointer
-    auto output = LoadHigher(a, pointer);
-
     auto expected_output_lanes = AllocateAligned<T>(N);
     expected_output_lanes[0] = ConvertScalarTo<T>(1);
     expected_output_lanes[1] = ConvertScalarTo<T>(20);
-    const auto expected_output = Load(d, expected_output_lanes.get());
 
-    HWY_ASSERT_VEC_EQ(d, expected_output, output);
+    HWY_ASSERT_VEC_EQ(d, Load(d, expected_output_lanes.get()), LoadHigher(a, pointer));
 
-#else
+  #else
+      (void)d;
+  #endif
+    }
+
+  template <typename T, class D, HWY_IF_LANES_D(D, 1)>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
     (void)d;
-#endif
   }
+
+  template <typename T, class D, HWY_IF_LANES_GT_D(D, 2)>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    (void)d;
+  }
+
 };
 
 HWY_NOINLINE void TestAllLoadHigher() {

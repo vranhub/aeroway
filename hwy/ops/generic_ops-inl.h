@@ -7538,17 +7538,11 @@ HWY_API bool AllZeros(V a) {
 #else
 #define HWY_NATIVE_LOAD_HIGHER
 #endif
-template <class V, typename T, HWY_IF_LANES_GT_D(DFromV<V>, 1)>
+template <class V, typename T, HWY_IF_LANES_D(DFromV<V>, 2)>
 HWY_API V LoadHigher(V a, T* b) {
   return InsertLane(a, 1, *b);
 }
 
-template <class V, typename T, HWY_IF_LANES_D(DFromV<V>, 1)>
-HWY_API V LoadHigher(V a, T* b) {
-  const DFromV<V> d;
-  auto new_b = LoadN(d, b, Lanes(d));
-  return IfThenElse(FirstN(d, 1), a, new_b);
-}
 // ================================================== Operator wrapper
 
 // SVE* and RVV currently cannot define operators and have already defined
