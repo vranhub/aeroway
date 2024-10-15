@@ -257,6 +257,11 @@ HWY_SVE_FOREACH_BF16_UNCONDITIONAL(HWY_SPECIALIZE, _, _)
       NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
     return sv##OP##_##CHAR##BITS##_x(m, a, b);                             \
   }
+#define HWY_SVE_RETV_ARGMVV_M(BASE, CHAR, BITS, HALF, NAME, OP)            \
+  HWY_API HWY_SVE_V(BASE, BITS)                                            \
+      NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
+    return sv##OP##_##CHAR##BITS##_m(m, a, b);                             \
+  }
 
 #define HWY_SVE_RETV_ARGVVV(BASE, CHAR, BITS, HALF, NAME, OP) \
   HWY_API HWY_SVE_V(BASE, BITS)                               \
@@ -1641,6 +1646,11 @@ HWY_API V MaskedSatSubOr(V no, M m, V a, V b) {
 }
 #endif
 
+// ------------------------------ MaskedMul_M
+namespace detail {
+  HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV_M, MaskedMul_M, mul);
+}
+
 // ------------------------------ MulLower
 #ifdef HWY_NATIVE_MUL_LOWER
 #undef HWY_NATIVE_MUL_LOWER
@@ -1648,10 +1658,10 @@ HWY_API V MaskedSatSubOr(V no, M m, V a, V b) {
 #define HWY_NATIVE_MUL_LOWER
 #endif
 
-#define HWY_SVE_MUL_LOWER(BASE, CHAR, BITS, HALF, NAME, OP) \
-HWY_API HWY_SVE_V(BASE, BITS)                               \
-  NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) {  \
-    return detail::MaskedMul(svptrue_pat_b##BITS(SV_VL1), a, b);    \
+#define HWY_SVE_MUL_LOWER(BASE, CHAR, BITS, HALF, NAME, OP)       \
+HWY_API HWY_SVE_V(BASE, BITS)                                     \
+  NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) {        \
+    return detail::MaskedMul_M(svptrue_pat_b##BITS(SV_VL1), a, b);\
 }
 
 HWY_SVE_FOREACH(HWY_SVE_MUL_LOWER, MulLower, _)
@@ -6598,6 +6608,7 @@ HWY_API V HighestSetBitIndex(V v) {
 #undef HWY_SVE_RETV_ARGVN
 #undef HWY_SVE_RETV_ARGMV
 #undef HWY_SVE_RETV_ARGVV
+#undef HWY_SVE_RETV_ARGMVV_M
 #undef HWY_SVE_RETV_ARGVVV
 #undef HWY_SVE_RETV_ARGMVVV
 #undef HWY_SVE_T
