@@ -488,6 +488,24 @@ HWY_API V InterleaveEven(V a, V b) {
 }
 #endif
 
+// ------------------------------ InterleaveEvenOrZero
+
+#if HWY_TARGET != HWY_SCALAR || HWY_IDE
+template <class V, class M>
+HWY_API V InterleaveEvenOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, InterleaveEven(DFromV<V>(), a, b));
+}
+#endif
+
+// ------------------------------ InterleaveOddOrZero
+
+#if HWY_TARGET != HWY_SCALAR || HWY_IDE
+template <class V, class M>
+HWY_API V InterleaveOddOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, InterleaveOdd(DFromV<V>(), a, b));
+}
+#endif
+
 // ------------------------------ AddSub
 
 template <class V, HWY_IF_LANES_D(DFromV<V>, 1)>
