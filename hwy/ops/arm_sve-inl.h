@@ -761,6 +761,9 @@ HWY_API V Or(const V a, const V b) {
   return BitCast(df, Or(BitCast(du, a), BitCast(du, b)));
 }
 
+// ------------------------------ MaskedOrOrZero
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGMVV_Z, MaskedOrOrZero, orr)
+
 // ------------------------------ Xor
 
 namespace detail {
