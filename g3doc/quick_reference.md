@@ -2146,6 +2146,12 @@ Ops in this section are only available if `HWY_TARGET != HWY_SCALAR`:
     `InterleaveOdd(d, a, b)` is usually more efficient than `OddEven(b,
     DupOdd(a))`.
 
+*   <code>V **InterleaveEvenOrZero**(M m, V a, V b)</code>: Performs the same 
+    operation as InterleaveEven, but returns zero in lanes where m is false.
+
+*   <code>V **InterleaveOddOrZero**(M m, V a, V b)</code>: Performs the same 
+    operation as InterleaveOdd, but returns zero in lanes where m is false.
+
 #### Zip
 
 *   `Ret`: `MakeWide<T>`; `V`: `{u,i}{8,16,32}` \
