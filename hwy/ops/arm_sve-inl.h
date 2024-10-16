@@ -219,6 +219,16 @@ HWY_SVE_FOREACH_BF16_UNCONDITIONAL(HWY_SPECIALIZE, _, _)
   HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) { \
     return sv##OP##_##CHAR##BITS(v);                            \
   }
+#define HWY_SVE_RETV_ARGMV_M(BASE, CHAR, BITS, HALF, NAME, OP)          \
+  HWY_API HWY_SVE_V(BASE, BITS)                                         \
+    NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) {\
+    return sv##OP##_##CHAR##BITS##_m(b, m, a);                          \
+  }
+#define HWY_SVE_RETV_ARGMV_Z(BASE, CHAR, BITS, HALF, NAME, OP)\
+  HWY_API HWY_SVE_V(BASE, BITS)                               \
+    NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a) {               \
+    return sv##OP##_##CHAR##BITS##_z(m, a);                   \
+  }
 
 // vector = f(vector, scalar), e.g. detail::AddN
 #define HWY_SVE_RETV_ARGPVN(BASE, CHAR, BITS, HALF, NAME, OP)    \
@@ -232,11 +242,6 @@ HWY_SVE_FOREACH_BF16_UNCONDITIONAL(HWY_SPECIALIZE, _, _)
     return sv##OP##_##CHAR##BITS(a, b);                        \
   }
 
-// vector = f(mask, vector), e.g. MaskedSqrt
-#define HWY_SVE_RETV_ARGMV(BASE, CHAR, BITS, HALF, NAME, OP)                \
-  HWY_API HWY_SVE_V(BASE, BITS) NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a) { \
-    return sv##OP##_##CHAR##BITS##_m(a, m, a);                              \
-  }
 // vector = f(vector, vector), e.g. Add
 #define HWY_SVE_RETV_ARGVV(BASE, CHAR, BITS, HALF, NAME, OP)   \
   HWY_API HWY_SVE_V(BASE, BITS)                                \
@@ -1252,7 +1257,7 @@ HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGPV, Sqrt, sqrt)
 
 // ------------------------------ MaskedSqrt
 namespace detail {
-HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGMV, MaskedSqrt, sqrt)
+HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGMV_M, MaskedSqrt, sqrt)
 }
 
 // ------------------------------ SqrtLower
@@ -1262,14 +1267,17 @@ HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGMV, MaskedSqrt, sqrt)
 #define HWY_NATIVE_SQRT_LOWER
 #endif
 
-#define HWY_SVE_SQRT_LOWER(BASE, CHAR, BITS, HALF, NAME, OP)  \
-  HWY_API HWY_SVE_V(BASE, BITS)                               \
-      NAME(HWY_SVE_V(BASE, BITS) a) {                         \
-    return detail::MaskedSqrt(svptrue_pat_b##BITS(SV_VL1), a);\
+#define HWY_SVE_SQRT_LOWER(BASE, CHAR, BITS, HALF, NAME, OP)      \
+  HWY_API HWY_SVE_V(BASE, BITS)                                   \
+      NAME(HWY_SVE_V(BASE, BITS) a) {                             \
+    return detail::MaskedSqrt(svptrue_pat_b##BITS(SV_VL1), a, a); \
 }
 
 HWY_SVE_FOREACH_F(HWY_SVE_SQRT_LOWER, SqrtLower, _)
 #undef HWY_SVE_SQRT_LOWER
+
+// ------------------------------ MaskedSqrtOrZero
+HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGMV_Z, MaskedSqrtOrZero, sqrt)
 
 // ------------------------------ ApproximateReciprocalSqrt
 #ifdef HWY_NATIVE_F64_APPROX_RSQRT

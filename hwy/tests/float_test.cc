@@ -165,6 +165,52 @@ HWY_NOINLINE void TestAllApproximateReciprocal() {
   ForFloatTypes(ForPartialVectors<TestApproximateReciprocal>());
 }
 
+struct TestMaskedApproximateReciprocal {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const MFromD<D> first_three = FirstN(d, 3);
+    const auto v = Iota(d, -2);
+    const auto nonzero =
+        IfThenElse(Eq(v, Zero(d)), Set(d, ConvertScalarTo<T>(1)), v);
+    const size_t N = Lanes(d);
+    auto input = AllocateAligned<T>(N);
+    auto actual = AllocateAligned<T>(N);
+    HWY_ASSERT(input && actual);
+
+    Store(nonzero, d, input.get());
+    Store(MaskedApproximateReciprocalOrZero(nonzero), d, actual.get());
+
+    double max_l1 = 0.0;
+    double worst_expected = 0.0;
+    double worst_actual = 0.0;
+    double expected;
+    for (size_t i = 0; i < N; ++i) {
+      if (i<3) {
+        expected = 1.0 / input[i];
+      } else {
+        expected = 0.0;
+      }
+      const double l1 = ScalarAbs(expected - actual[i]);
+      if (l1 > max_l1) {
+        max_l1 = l1;
+        worst_expected = expected;
+        worst_actual = actual[i];
+      }
+    }
+    const double abs_worst_expected = ScalarAbs(worst_expected);
+    if (abs_worst_expected > 1E-5) {
+      const double max_rel = max_l1 / abs_worst_expected;
+      fprintf(stderr, "max l1 %f rel %f (%f vs %f)\n", max_l1, max_rel,
+              worst_expected, worst_actual);
+      HWY_ASSERT(max_rel < 0.004);
+    }
+  }
+};
+
+HWY_NOINLINE void TestAllMaskedApproximateReciprocal() {
+  ForFloatTypes(ForPartialVectors<TestApproximateReciprocal>());
+}
+
 struct TestSquareRoot {
   template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
@@ -201,6 +247,23 @@ HWY_NOINLINE void TestAllSqrtLower() {
   ForFloatTypes(ForPartialVectors<TestSqrtLower>());
 }
 
+struct TestMaskedSqrt {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const auto v0 = Zero(d);
+    const auto vi = Iota(d, 4);
+
+    const MFromD<D> first_four = FirstN(d, 4);
+    const auto expected = IfThenElse(first_four, Sqrt(vi), v0);
+
+    HWY_ASSERT_VEC_EQ(d, expected, MaskedSqrtOrZero(first_four, vi));
+  }
+};
+
+HWY_NOINLINE void TestAllMaskedSqrt() {
+  ForFloatTypes(ForPartialVectors<TestMaskedSqrt>());
+}
+
 struct TestReciprocalSquareRoot {
   template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
@@ -223,6 +286,32 @@ struct TestReciprocalSquareRoot {
 
 HWY_NOINLINE void TestAllReciprocalSquareRoot() {
   ForFloatTypes(ForPartialVectors<TestReciprocalSquareRoot>());
+}
+
+struct TestMaskedReciprocalSquareRoot {
+  template <typename T, class D>
+    HWY_NOINLINE void operator()(T /*unused*/, D d) {
+      const Vec<D> v = Set(d, ConvertScalarTo<T>(123.0f));
+      const MFromD<D> first_three = FirstN(d, 3);
+      const size_t N = Lanes(d);
+      auto lanes = AllocateAligned<T>(N);
+      HWY_ASSERT(lanes);
+      Store(MaskedApproximateReciprocalSqrtOrZero(first_three, v), d, lanes.get());
+      for (size_t i = 0; i < N; ++i) {
+        T expected_val = i<3 ? (1/std::sqrt(ConvertScalarTo<T>(123.0f))) : 0;
+        T err = ConvertScalarTo<T>(ConvertScalarTo<float>(lanes[i]) - expected_val);
+        if (err < ConvertScalarTo<T>(0)) err = -err;
+        if (static_cast<double>(err) >= 4E-4) {
+          HWY_ABORT("Lane %d (%d): actual %f err %f\n", static_cast<int>(i),
+                    static_cast<int>(N), static_cast<double>(lanes[i]),
+                    static_cast<double>(err));
+        }
+      }
+    }
+};
+
+HWY_NOINLINE void TestAllMaskedReciprocalSquareRoot() {
+  ForFloatTypes(ForPartialVectors<TestMaskedReciprocalSquareRoot>());
 }
 
 template <typename T, class D>
@@ -568,7 +657,10 @@ HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllDiv);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllApproximateReciprocal);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllSquareRoot);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllSqrtLower);
+HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllMaskedSqrt);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllReciprocalSquareRoot);
+HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllMaskedReciprocalSquareRoot);
+HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllMaskedApproximateReciprocal);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllRound);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllNearestInt);
 HWY_EXPORT_AND_TEST_P(HwyFloatTest, TestAllDemoteToNearestInt);
