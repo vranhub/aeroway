@@ -688,6 +688,18 @@ HWY_API V SaturatedAbs(V v) {
 
 #endif
 
+// ------------------------------ MaskedAbsOr
+template <class V, HWY_IF_SIGNED_V(V), class M>
+HWY_API V MaskedAbsOr(M m, V v, V no) {
+  return IfThenElse(m, Abs(v), no);
+}
+
+// ------------------------------ MaskedAbsOrZero
+template <class V, HWY_IF_SIGNED_V(V), class M>
+HWY_API V MaskedAbsOrZero(M m, V v) {
+  return IfThenElseZero(m, Abs(v));
+}
+
 // ------------------------------ Reductions
 
 // Targets follow one of two strategies. If HWY_NATIVE_REDUCE_SCALAR is toggled,

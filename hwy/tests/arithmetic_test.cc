@@ -192,9 +192,41 @@ struct TestFloatAbs {
   }
 };
 
+struct TestMaskedAbs {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const MFromD<D> zero_mask = MaskFalse(d);
+    const MFromD<D> first_five = FirstN(d, 5);
+
+    const Vec<D> v0 = Zero(d);
+    const Vec<D> vp1 = Set(d, ConvertScalarTo<T>(1));
+    const Vec<D> vn1 = Set(d, ConvertScalarTo<T>(-1));
+    const Vec<D> vp2 = Set(d, ConvertScalarTo<T>(0.01));
+    const Vec<D> vn2 = Set(d, ConvertScalarTo<T>(-0.01));
+
+    // Test that mask is applied correctly for MaskedAbsOr
+    const Vec<D> v1_exp = IfThenElse(first_five, vp1, vn1);
+    const Vec<D> v2_exp = IfThenElse(first_five, vp2, vn2);
+
+    HWY_ASSERT_VEC_EQ(d, v1_exp, MaskedAbsOr(first_five, vn1, vn1));
+    HWY_ASSERT_VEC_EQ(d, v2_exp, MaskedAbsOr(first_five, vn2, vn2));
+
+    // Test that zero mask will return all zeroes for MaskedAbsOrZero
+    HWY_ASSERT_VEC_EQ(d, v0, MaskedAbsOrZero(zero_mask, vn1));
+
+    // Test that zero is returned in cases m==0 for MaskedAbsOrZero
+    const Vec<D> v1_exp_z = IfThenElseZero(first_five, vp1);
+    const Vec<D> v2_exp_z = IfThenElseZero(first_five, vp2);
+
+    HWY_ASSERT_VEC_EQ(d, v1_exp_z, MaskedAbsOrZero(first_five, vn1));
+    HWY_ASSERT_VEC_EQ(d, v2_exp_z, MaskedAbsOrZero(first_five, vn2));
+  }
+};
+
 HWY_NOINLINE void TestAllAbs() {
   ForSignedTypes(ForPartialVectors<TestAbs>());
   ForFloatTypes(ForPartialVectors<TestFloatAbs>());
+  ForSignedTypes(ForPartialVectors<TestMaskedAbs>());
 }
 
 struct TestIntegerNeg {

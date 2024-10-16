@@ -546,6 +546,14 @@ from left to right, of the arguments passed to `Create{2-4}`.
     `SaturatedAbs(a)` is usually more efficient than
     `IfThenElse(Eq(a, Set(d, LimitsMin<T>())), Set(d, LimitsMax<T>()), Abs(a))`.
 
+*   `V`: `{i,f}` \
+    <code>V **MaskedAbsOr**(M m, V a, V b)</code> returns the absolute value of
+    `a[i]` where m is active and returns `b[i]` otherwise.
+
+*   `V`: `{i,f}` \
+    <code>V **MaskedAbsOrZero**(M m, V a)</code> returns the absolute value of
+    `a[i]` where m is active and returns zero otherwise.
+
 *   <code>V **AbsDiff**(V a, V b)</code>: returns `|a[i] - b[i]|` in each lane.
 
 *   `V`: `{i,u}{8,16,32},f{16,32}`, `VW`: `Vec<RepartitionToWide<DFromV<V>>>` \

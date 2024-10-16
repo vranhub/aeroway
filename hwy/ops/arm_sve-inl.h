@@ -219,6 +219,16 @@ HWY_SVE_FOREACH_BF16_UNCONDITIONAL(HWY_SPECIALIZE, _, _)
   HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) { \
     return sv##OP##_##CHAR##BITS(v);                            \
   }
+#define HWY_SVE_RETV_ARGMV_M(BASE, CHAR, BITS, HALF, NAME, OP)          \
+  HWY_API HWY_SVE_V(BASE, BITS)                                         \
+    NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) {\
+    return sv##OP##_##CHAR##BITS##_m(b, m, a);                          \
+  }
+#define HWY_SVE_RETV_ARGMV_Z(BASE, CHAR, BITS, HALF, NAME, OP)\
+  HWY_API HWY_SVE_V(BASE, BITS)                               \
+    NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a) {               \
+    return sv##OP##_##CHAR##BITS##_z(m, a);                   \
+  }
 
 // vector = f(vector, scalar), e.g. detail::AddN
 #define HWY_SVE_RETV_ARGPVN(BASE, CHAR, BITS, HALF, NAME, OP)    \
@@ -877,6 +887,12 @@ HWY_SVE_FOREACH_IF(HWY_SVE_RETV_ARGPV, Abs, abs)
 
 HWY_SVE_FOREACH_I(HWY_SVE_RETV_ARGPV, SaturatedAbs, qabs)
 #endif  // HWY_SVE_HAVE_2
+
+// ------------------------------ MaskedAbsOr
+HWY_SVE_FOREACH_IF(HWY_SVE_RETV_ARGMV_M, MaskedAbsOr, abs)
+
+// ------------------------------ MaskedAbsOrZero
+HWY_SVE_FOREACH_IF(HWY_SVE_RETV_ARGMV_Z, MaskedAbsOrZero, abs)
 
 // ================================================== ARITHMETIC
 
@@ -6607,6 +6623,8 @@ HWY_API V HighestSetBitIndex(V v) {
 #undef HWY_SVE_RETV_ARGV
 #undef HWY_SVE_RETV_ARGVN
 #undef HWY_SVE_RETV_ARGMV
+#undef HWY_SVE_RETV_ARGMV_M
+#undef HWY_SVE_RETV_ARGMV_Z
 #undef HWY_SVE_RETV_ARGVV
 #undef HWY_SVE_RETV_ARGMVV_M
 #undef HWY_SVE_RETV_ARGVVV
