@@ -1056,6 +1056,24 @@ Per-lane variable shifts (slow if SSSE3/SSE4, or 16-bit, or Shr i64 on AVX2):
     neither NaN nor infinity, i.e. normal, subnormal or zero. Equivalent to
     `Not(Or(IsNaN(v), IsInf(v)))`.
 
+#### Masked floating-point classification
+
+All ops in this section return `false` for `mask=false` lanes. These are
+equivalent to, and potentially more efficient than, `And(m, Eq(a, b));` etc.
+
+*   `V`: `{f}` \
+    <code>M **IsNaN**(V v)</code>: returns mask indicating whether `v[i]` is
+    "not a number" (unordered) or `false` if `m[i]` is false.
+
+*   `V`: `{f}` \
+    <code>M **IsInf**(V v)</code>: returns mask indicating whether `v[i]` is
+    positive or negative infinity or `false` if `m[i]` is false.
+
+*   `V`: `{f}` \
+    <code>M **IsFinite**(V v)</code>: returns mask indicating whether `v[i]` is
+    neither NaN nor infinity, i.e. normal, subnormal or zero or `false` if `m[i]`
+    is false. Equivalent to `Not(Or(IsNaN(v), IsInf(v)))`.
+
 ### Logical
 
 *   `V`: `{u,i}` \
@@ -1534,6 +1552,20 @@ These return a mask (see above) indicating whether the condition is true.
     each pair, the mask lanes are either both true or both false. This is useful
     for comparing 64-bit keys alongside 64-bit values. Only available if
     `HWY_TARGET != HWY_SCALAR`.
+
+#### Masked comparison
+
+All ops in this section return `false` for `mask=false` lanes. These are
+equivalent to, and potentially more efficient than, `And(m, Eq(a, b));` etc.
+
+*   <code>M **MaskedCompEq**(M m, V a, V b)</code>: returns `a[i] == b[i]` or
+    `false` if `m[i]` is false.
+
+*   <code>M **MaskedCompLt**(M m, V a, V b)</code>: returns `a[i] < b[i]` or
+    `false` if `m[i]` is false.
+
+*   <code>M **MaskedCompGt**(M m, V a, V b)</code>: returns `a[i] > b[i]` or
+    `false` if `m[i]` is false.
 
 ### Memory
 
