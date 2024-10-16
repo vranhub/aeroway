@@ -920,6 +920,40 @@ not a concern, these are equivalent to, and potentially more efficient than,
     b[i]` saturated to the minimum/maximum representable value, or `no[i]` if
     `m[i]` is false.
 
+#### Zero masked arithmetic
+
+All ops in this section return `0` for `mask=false` lanes. These are equivalent
+to, and potentially more efficient than, `IfThenElseZero(m, Add(a, b));` etc.
+
+*   <code>V **MaskedAddOrZero**(M m, V a, V b)</code>: returns `a[i] + b[i]`
+    or `0` if `m[i]` is false.
+*   <code>V **MaskedSubOrZero**(M m, V a, V b)</code>: returns `a[i] - b[i]`
+    or `0` if `m[i]` is false.
+*   <code>V **MaskedMulOrZero**(M m, V a, V b)</code>: returns `a[i] * b[i]`
+    or `0` if `m[i]` is false.
+*   <code>V **MaskedDivideOrZero**(M m, V a, V b)</code>: returns `a[i] / b[i]`
+    or `0` if `m[i]` is false.
+*   `V`: `{u,i}{8,16}` \
+    <code>V **MaskedSaturatedAddOrZero**(M m, V a, V b)</code>: returns `a[i] +
+    b[i]` saturated to the minimum/maximum representable value, or `0` if
+    `m[i]` is false.
+*   `V`: `{u,i}{8,16}` \
+    <code>V **MaskedSaturatedSubOrZero**(M m, V a, V b)</code>: returns `a[i] -
+    b[i]` saturated to the minimum/maximum representable value, or `0` if
+    `m[i]` is false.
+*   `V`: `i16` \
+    <code>V **MaskedMulFixedPoint15OrZero**(M m, V)</code>: returns returns the
+    result of multiplying two Q1.15 fixed-point numbers, or `0` if `m[i]` is
+    false.
+*   <code>V **MaskedMulAddOrZero**(M m, V a, V b, V c)</code>: returns `a[i] *
+    b[i] + c[i]` or `0` if `m[i]` is false.
+*   <code>V **MaskedNegMulAddOrZero**(M m, V a, V b, V c)</code>: returns
+    `-a[i] * b[i] + c[i]` or `0` if `m[i]` is false.
+*   `V`: `{bf,u,i}16`, `D`: `RepartitionToWide<DFromV<V>>` \
+    <code>Vec&lt;D&gt; **MaskedWidenMulPairwiseAddOrZero**(M m, V)</code>: widens `a`
+    and `b` to `TFromD<D>` and computes `a[2*i+1]*b[2*i+1] + a[2*i+0]*b[2*i+0]`,
+    or `0` if `m[i]` is false.
+
 #### Complex number operations
 
 Complex types are represented as complex value pairs of real and imaginary
