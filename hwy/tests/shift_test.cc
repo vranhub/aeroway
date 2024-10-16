@@ -519,11 +519,17 @@ struct TestMaskedShiftOrZero {
 
     const Vec<D> v1_exp_right = IfThenElse(first_five, ShiftRight<1>(v1), v0);
     HWY_ASSERT_VEC_EQ(d, v1_exp_right, MaskedShiftRightOrZero<1>(first_five, v1));
+
+    // Test MaskedShiftRightOr
+    const auto v2 = Iota(d, 2);
+    const Vec<D> v2_exp = IfThenElse(first_five, ShiftRight<1>(v2), v1);
+    HWY_ASSERT_VEC_EQ(d, v2_exp, MaskedShiftRightOr<1>(v1, first_five, v2));
+
   }
 };
 
 HWY_NOINLINE void TestAllMaskedShift() {
-  ForSignedTypes(ForPartialVectors<TestMaskedShiftOrZero>());
+  ForIntegerTypes(ForPartialVectors<TestMaskedShiftOrZero>());
 }
 
 // NOLINTNEXTLINE(google-readability-namespace-comments)
