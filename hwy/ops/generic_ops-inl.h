@@ -7750,6 +7750,11 @@ HWY_API bool AllZeros(V a) {
 }
 #endif  // HWY_NATIVE_ALLZEROS
 
+template <class V, HWY_IF_SIGNED_V(V), class M>
+HWY_API V MaskedMaxOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, (Max(a, b)));
+}
+
 // ================================================== Operator wrapper
 
 // SVE* and RVV currently cannot define operators and have already defined
