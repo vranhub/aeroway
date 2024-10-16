@@ -5552,6 +5552,12 @@ HWY_API V SqrtLower(V a) {
 #undef HWY_SVE_SQRT_LOWER
 #endif // HWY_NATIVE_SQRT_LOWER
 
+// ------------------------------ MaskedSqrtOrZero
+template <class V, HWY_IF_FLOAT_V(V), class M>
+HWY_API V MaskedSqrtOrZero(M m, V v) {
+  return IfThenElseZero(m, Sqrt(v));
+}
+
 // ------------------------------ SumOfMulQuadAccumulate
 
 #if (defined(HWY_NATIVE_I8_I8_SUMOFMULQUADACCUMULATE) == \
@@ -5736,6 +5742,12 @@ HWY_API V ApproximateReciprocal(V v) {
 
 #endif  // HWY_NATIVE_F64_APPROX_RECIP
 
+// ------------------------------ MaskedApproximateReciprocalOrZero
+template <class V, HWY_IF_FLOAT_V(V), class M>
+HWY_API V MaskedApproximateReciprocalOrZero(M m,V v) {
+  return IfThenElseZero(m, ApproximateReciprocal(v));
+}
+
 // ------------------------------ F64 ApproximateReciprocalSqrt
 
 #if (defined(HWY_NATIVE_F64_APPROX_RSQRT) == defined(HWY_TARGET_TOGGLE))
@@ -5760,6 +5772,12 @@ HWY_API V ApproximateReciprocalSqrt(V v) {
 #endif  // HWY_HAVE_FLOAT64
 
 #endif  // HWY_NATIVE_F64_APPROX_RSQRT
+
+// ------------------------------ MaskedApproximateReciprocalSqrtOrZero
+template <class V, HWY_IF_FLOAT_V(V), class M>
+HWY_API V MaskedApproximateReciprocalSqrtOrZero(M m,V v) {
+  return IfThenElseZero(m, ApproximateReciprocalSqrt(v));
+}
 
 // ------------------------------ Compress*
 

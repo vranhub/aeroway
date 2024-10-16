@@ -666,6 +666,10 @@ from left to right, of the arguments passed to `Create{2-4}`.
     <code>V **Sqrt**(V a)</code>: returns `sqrt(a[i])`.
 
 *   `V`: `{f}` \
+    <code>V **MaskedSqrtOrZero**(M m, V a)</code>: returns `sqrt(a[i])` where
+    m is true, and zero otherwise.
+
+*   `V`: `{f}` \
     <code>V **SqrtLower**(V a)</code>: returns `sqrt(a[0])` in lowest lane and
     `a[i]` elsewhere.
 
@@ -675,8 +679,16 @@ from left to right, of the arguments passed to `Create{2-4}`.
     and PPC provide 12-bit approximations but the error on Arm is closer to 1%.
 
 *   `V`: `{f}` \
+    <code>V **MaskedApproximateReciprocalSqrtOrZero**(M m, V a)</code>: returns
+    the result of ApproximateReciprocalSqrt where m is true and zero otherwise.
+
+*   `V`: `{f}` \
     <code>V **ApproximateReciprocal**(V a)</code>: returns an approximation of
     `1.0 / a[i]`.
+
+*   `V`: `{f}` \
+    <code>V **MaskedApproximateReciprocalOrZero**(M m, V a)</code>: returns the
+    result of ApproximateReciprocal where m is true and zero otherwise.
 
 *   <code>V **AddLower**(V a, V b)</code>: returns `a[0] + b[0]`
     and `a[i]` in all other lanes.
