@@ -501,6 +501,31 @@ HWY_NOINLINE void TestAllVariableRoundingShr() {
   ForIntegerTypes(ForPartialVectors<TestVariableRoundingShr>());
 }
 
+struct TestMaskedShiftOrZero {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const MFromD<D> all_true = MaskTrue(d);
+    const auto v1 = Iota(d, 1);
+
+    HWY_ASSERT_VEC_EQ(d, ShiftLeft<1>(v1), MaskedShiftLeftOrZero<1>(all_true, v1));
+
+    HWY_ASSERT_VEC_EQ(d, ShiftRight<1>(v1), MaskedShiftRightOrZero<1>(all_true, v1));
+
+    const MFromD<D> first_five = FirstN(d, 5);
+    const Vec<D> v0 = Zero(d);
+
+    const Vec<D> v1_exp_left = IfThenElse(first_five, ShiftLeft<1>(v1), v0);
+    HWY_ASSERT_VEC_EQ(d, v1_exp_left, MaskedShiftLeftOrZero<1>(first_five, v1));
+
+    const Vec<D> v1_exp_right = IfThenElse(first_five, ShiftRight<1>(v1), v0);
+    HWY_ASSERT_VEC_EQ(d, v1_exp_right, MaskedShiftRightOrZero<1>(first_five, v1));
+  }
+};
+
+HWY_NOINLINE void TestAllMaskedShift() {
+  ForSignedTypes(ForPartialVectors<TestMaskedShiftOrZero>());
+}
+
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -514,6 +539,7 @@ HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllShifts);
 HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllVariableShifts);
 HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllRoundingShiftRight);
 HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllVariableRoundingShr);
+HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllMaskedShift);
 HWY_AFTER_TEST();
 }  // namespace hwy
 

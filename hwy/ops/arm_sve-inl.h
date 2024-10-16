@@ -1101,6 +1101,18 @@ HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_N, ShiftRight, asr_n)
 
 #undef HWY_SVE_SHIFT_N
 
+// ------------------------------ MaskedShift[Left/Right]SameOrZero
+
+#define HWY_SVE_SHIFT_Z(BASE, CHAR, BITS, HALF, NAME, OP)                   \
+  template <int kBits>                                                     \
+  HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) v) {            \
+  auto shifts = svdup_n_u##BITS(static_cast<HWY_SVE_T(uint, BITS)>(kBits)); \
+  return sv##OP##_s##BITS##_z(HWY_SVE_PTRUE(BITS), v, shifts);       \
+  }
+HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_Z, ShiftLeftSameOrZero, lsl)
+HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_Z, ShiftRightSameOrZero, asr)
+
+#undef HWY_SVE_SHIFT_Z
 // ------------------------------ RotateRight
 
 #if HWY_SVE_HAVE_2

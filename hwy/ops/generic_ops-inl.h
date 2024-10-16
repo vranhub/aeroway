@@ -710,6 +710,17 @@ HWY_API MFromD<D> MaskedIsNaN(const M m, const V v) {
 }
 #endif  // HWY_NATIVE_MASKED_COMP
 
+// ------------------------------ MaskedShift
+template <int kshift, class V, class M>
+HWY_API V MaskedShiftLeftOrZero(M m, V a) {
+  return IfThenElseZero(m, ShiftLeft<kshift>(a));
+}
+
+template <int kshift, class V, class M>
+HWY_API V MaskedShiftRightOrZero(M m, V a) {
+  return IfThenElseZero(m, ShiftRight<kshift>(a));
+}
+
 // ------------------------------ IfNegativeThenNegOrUndefIfZero
 
 #if (defined(HWY_NATIVE_INTEGER_IF_NEGATIVE_THEN_NEG) == \
@@ -6825,7 +6836,7 @@ HWY_INLINE V UI8ReverseBitsStep(V v) {
   const auto shr_result = BitCast(d, ShiftRight<kShiftAmt>(v_to_shift));
   const auto shr_result_mask =
       BitCast(d, Set(du, static_cast<uint8_t>(kShrResultMask)));
-  return Or(And(shr_result, shr_result_mask),
+  return And(shr_result, shr_result_mask),
             AndNot(shr_result_mask, shl_result));
 }
 
