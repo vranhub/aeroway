@@ -466,6 +466,70 @@ AlignedFreeUniquePtr<float[]> ReorderBF16TestCases(D d, size_t& padded) {
   return in;
 }
 
+template <typename ToT>
+struct TestDemoteRoundTo {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D from_d) {
+    static_assert(!IsFloat<ToT>(), "Use TestDemoteToFloat for float output");
+    static_assert(sizeof(T) > sizeof(ToT), "Input type must be wider");
+    const Rebind<ToT, D> to_d;
+
+    const size_t N = Lanes(from_d);
+    auto from = AllocateAligned<T>(N);
+    auto from_ceil= AllocateAligned<T>(N);
+    auto from_floor = AllocateAligned<T>(N);
+    auto expected_ceil = AllocateAligned<ToT>(N);
+    auto expected_floor = AllocateAligned<ToT>(N);
+    HWY_ASSERT(from && from_ceil && from_floor && expected_ceil && expected_floor);
+
+    // Narrower range in the wider type, for clamping before we cast
+    const T min = ConvertScalarTo<T>(IsSigned<T>() ? LimitsMin<ToT>()
+                                                   : static_cast<ToT>(0));
+    const T max = LimitsMax<ToT>();
+
+    RandomState rng;
+    for (size_t rep = 0; rep < AdjustedReps(1000); ++rep) {
+      for (size_t i = 0; i < N; ++i) {
+        const uint64_t bits = rng();
+        CopyBytes<sizeof(T)>(&bits, &from[i]);  // not same size
+        expected_ceil[i] = static_cast<ToT>(std::ceil((HWY_MIN(HWY_MAX(min, from[i]), max))));
+        expected_floor[i] = static_cast<ToT>(std::floor((HWY_MIN(HWY_MAX(min, from[i]), max))));
+      }
+      const auto in = Load(from_d, from.get());
+      HWY_ASSERT_VEC_EQ(to_d, expected_ceil.get(), DemoteCeilTo(to_d, in));
+      HWY_ASSERT_VEC_EQ(to_d, expected_floor.get(), DemoteFloorTo(to_d, in));
+    }
+
+    for (size_t rep = 0; rep < AdjustedReps(1000); ++rep) {
+      for (size_t i = 0; i < N; ++i) {
+        const uint64_t bits = rng();
+        CopyBytes<sizeof(ToT)>(&bits, &expected_ceil[i]);  // not same size
+        CopyBytes<sizeof(ToT)>(&bits, &expected_floor[i]);  // not same size
+
+        if (!IsSigned<T>() && IsSigned<ToT>()) {
+          expected_ceil[i] &= static_cast<ToT>(std::ceil((max)));
+          expected_floor[i] &= static_cast<ToT>(std::floor((max)));
+        }
+
+        from_ceil[i] = ConvertScalarTo<T>(expected_ceil[i]);
+        from_floor[i] = ConvertScalarTo<T>(expected_floor[i]);
+      }
+
+      const auto in_ceil = Load(from_d, from_ceil.get());
+      const auto in_floor = Load(from_d, from_floor.get());
+      HWY_ASSERT_VEC_EQ(to_d, expected_ceil.get(), DemoteCeilTo(to_d, in_ceil));
+      HWY_ASSERT_VEC_EQ(to_d, expected_floor.get(), DemoteFloorTo(to_d, in_floor));
+    }
+  }
+};
+
+HWY_NOINLINE void TestAllDemoteRoundTo() {
+#if HWY_HAVE_FLOAT64
+  const ForDemoteVectors<TestDemoteRoundTo<int32_t>> to_i32;
+  to_i32(double());
+#endif
+}
+
 class TestReorderDemote2To {
   // In-place N^2 selection sort to avoid dependencies
   void Sort(float* p, size_t count) {
@@ -836,6 +900,7 @@ HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllDemoteToMixed);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllDemoteToFloat);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllDemoteUI64ToFloat);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllDemoteToBF16);
+HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllDemoteRoundTo);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllReorderDemote2To);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllOrderedDemote2To);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllI32F64);

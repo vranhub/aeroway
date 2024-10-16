@@ -3415,6 +3415,39 @@ HWY_API VFromD<D> ReorderDemote2To(D dbf16, VFromD<Repartition<float, D>> a,
 
 #endif  // HWY_NATIVE_DEMOTE_F32_TO_BF16
 
+// ------------------------------ DemoteTo (Alternate Rounding)
+#if (defined(HWY_NATIVE_DEMOTE_CEIL_TO) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_DEMOTE_CEIL_TO
+#undef HWY_NATIVE_DEMOTE_CEIL_TO
+#else
+#define HWY_NATIVE_DEMOTE_CEIL_TO
+#endif
+
+#if HWY_HAVE_FLOAT64
+template <class D32, HWY_IF_UI32_D(D32)>
+HWY_API VFromD<D32> DemoteCeilTo(D32 d32, VFromD<Rebind<double, D32>> v) {
+  return DemoteTo(d32, Ceil(v));
+}
+#endif // HWY_HAVE_FLOAT64
+
+#endif //HWY_NATIVE_DEMOTE_CEIL_TO
+
+#if (defined(HWY_NATIVE_DEMOTE_FLOOR_TO) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_DEMOTE_FLOOR_TO
+#undef HWY_NATIVE_DEMOTE_FLOOR_TO
+#else
+#define HWY_NATIVE_DEMOTE_FLOOR_TO
+#endif
+
+#if HWY_HAVE_FLOAT64
+template <class D32, HWY_IF_UI32_D(D32)>
+HWY_API VFromD<D32> DemoteFloorTo(D32 d32, VFromD<Rebind<double, D32>> v) {
+  return DemoteTo(d32, Floor(v));
+}
+#endif // HWY_HAVE_FLOAT64
+
+#endif //HWY_NATIVE_DEMOTE_FLOOR_TO
+
 // ------------------------------ PromoteInRangeTo
 #if (defined(HWY_NATIVE_F32_TO_UI64_PROMOTE_IN_RANGE_TO) == \
      defined(HWY_TARGET_TOGGLE))

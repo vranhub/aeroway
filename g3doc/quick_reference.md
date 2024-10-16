@@ -1861,6 +1861,14 @@ obtain the `D` that describes the return type.
     <code>Vec&lt;D&gt; **DemoteTo**(D, V v)</code>: narrows float to half (for
     bf16, it is unspecified whether this truncates or rounds).
 
+*   `V`,`D`: (`f64,i32`) \
+    <code>Vec&lt;D&gt; **DemoteCeilTo**(D, V v)</code>: Demotes a floating point
+    number to half-sized integral type with ceiling rounding.
+
+*   `V`,`D`: (`f64,i32`) \
+    <code>Vec&lt;D&gt; **DemoteFloorTo**(D, V v)</code>: Demotes a floating
+    point number to half-sized integral type with floor rounding.
+
 #### Single vector promotion
 
 These functions promote a half vector to a full vector. To obtain halves, use

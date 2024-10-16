@@ -2989,6 +2989,31 @@ HWY_API VFromD<DI32> DemoteToNearestInt(DI32 di32,
   return DemoteTo(di32, Round(v));
 }
 
+// ------------------------------ DemoteTo (Alternate Rounding)
+#ifdef HWY_NATIVE_DEMOTE_CEIL_TO
+#undef HWY_NATIVE_DEMOTE_CEIL_TO
+#else
+#define HWY_NATIVE_DEMOTE_CEIL_TO
+#endif
+
+template <class DI32, HWY_IF_I32_D(DI32)>
+HWY_API VFromD<DI32> DemoteCeilTo(DI32 di32,
+                                        VFromD<Rebind<double, DI32>> v) {
+  return DemoteTo(di32, Ceil(v));
+}
+
+#ifdef HWY_NATIVE_DEMOTE_FLOOR_TO
+#undef HWY_NATIVE_DEMOTE_FLOOR_TO
+#else
+#define HWY_NATIVE_DEMOTE_FLOOR_TO
+#endif
+
+template <class DI32, HWY_IF_I32_D(DI32)>
+HWY_API VFromD<DI32> DemoteFloorTo(DI32 di32,
+                                        VFromD<Rebind<double, DI32>> v) {
+  return DemoteTo(di32, Floor(v));
+}
+
 // ------------------------------ Iota (Add, ConvertTo)
 
 #define HWY_SVE_IOTA(BASE, CHAR, BITS, HALF, NAME, OP)          \
