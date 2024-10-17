@@ -2240,10 +2240,10 @@ Ops in this section are only available if `HWY_TARGET != HWY_SCALAR`:
     `InterleaveOdd(d, a, b)` is usually more efficient than `OddEven(b,
     DupOdd(a))`.
 
-*   <code>V **InterleaveEvenOrZero**(M m, V a, V b)</code>: Performs the same 
+*   <code>V **InterleaveEvenOrZero**(M m, V a, V b)</code>: Performs the same
     operation as InterleaveEven, but returns zero in lanes where m is false.
 
-*   <code>V **InterleaveOddOrZero**(M m, V a, V b)</code>: Performs the same 
+*   <code>V **InterleaveOddOrZero**(M m, V a, V b)</code>: Performs the same
     operation as InterleaveOdd, but returns zero in lanes where m is false.
 
 #### Zip
@@ -2541,6 +2541,24 @@ more efficient on some targets.
 *   <code>T **ReduceSum**(D, V v)</code>: returns the sum of all lanes.
 *   <code>T **ReduceMin**(D, V v)</code>: returns the minimum of all lanes.
 *   <code>T **ReduceMax**(D, V v)</code>: returns the maximum of all lanes.
+
+### Masked reductions
+
+**Note**: Horizontal operations (across lanes of the same vector) such as
+reductions are slower than normal SIMD operations and are typically used outside
+critical loops.
+
+All ops in this section ignore lanes where `mask=false`. These are equivalent
+to, and potentially more efficient than, `GetLane(SumOfLanes(d,
+IfThenElseZero(m, v)))` etc. The result is implementation-defined when all mask
+elements are false.
+
+*   <code>T **MaskedReduceSum**(D, M m, V v)</code>: returns the sum of all lanes
+    where `mask=true`.
+*   <code>T **MaskedReduceMin**(D, M m, V v)</code>: returns the minimum of all
+    lanes where `mask=true`.
+*   <code>T **MaskedReduceMax**(D, M m, V v)</code>: returns the maximum of all
+    lanes where `mask=true`.
 
 ### Crypto
 
