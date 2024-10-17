@@ -342,14 +342,12 @@ HWY_API Mask<DTo> DemoteMaskTo(DTo d_to, DFrom d_from, Mask<DFrom> m) {
 #else
 #define HWY_NATIVE_LOAD_HIGHER
 #endif
-#if HWY_TARGET != HWY_SCALAR || HWY_IDE
 template <class D, class V, typename T, HWY_IF_LANES_GT_D(D, 1)>
 HWY_API V LoadHigher(D d, V a, T* p) {
   const VFromD<D> b = LoadU(d, p);
   return ConcatLowerLower(d, b,a);
 }
 #endif
-// ------------------------------ CombineMasks
 
 #if (defined(HWY_NATIVE_COMBINE_MASKS) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_COMBINE_MASKS
