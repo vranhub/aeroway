@@ -1140,6 +1140,10 @@ equivalent to, and potentially more efficient than, `And(m, Eq(a, b));` etc.
     ```sizeof(TFromV<V>) * 8``` is returned in the corresponding result lanes.
 
 *   `V`: `{u,i}` \
+    <code>V **MaskedLeadingZeroCountOrZero**(M m, `V a)</code>: returns the
+    result of LeadingZeroCount where m is true, and zero otherwise.
+
+*   `V`: `{u,i}` \
     <code>V **TrailingZeroCount**(V a)</code>: returns the number of
     trailing zeros in each lane. For any lanes where ```a[i]``` is zero,
     ```sizeof(TFromV<V>) * 8``` is returned in the corresponding result lanes.
