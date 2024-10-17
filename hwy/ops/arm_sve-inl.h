@@ -6561,12 +6561,15 @@ HWY_API V HighestSetBitIndex(V v) {
 // ------------------------------ LoadHigher
 #ifdef HWY_NATIVE_LOAD_HIGHER
 #undef HWY_NATIVE_LOAD_HIGHER
+#else
+#define HWY_NATIVE_LOAD_HIGHER
 #endif
-#define HWY_NATIVE_LOAD_HIGHER(BASE, CHAR, BITS, HALF, NAME, OP)                   \
+  #define HWY_NATIVE_LOAD_HIGHER(BASE, CHAR, BITS, HALF, NAME, OP)                   \
+  template <size_t N, int kPow2> \
   HWY_API HWY_SVE_V(BASE, BITS)                                           \
-      NAME(HWY_SVE_V(BASE, BITS) a,  HWY_SVE_T(BASE, BITS) * p) {            \
-      auto b = svld1_##CHAR##BITS(HWY_SVE_PTRUE(BITS), detail::NativeLanePointer(p)); \
-    return IfThenElse(Eq(svindex_s##BITS(0, 1),svdup_s##BITS(1.0f)), b, a);  \
+      NAME(HWY_SVE_D(BASE, BITS, N, kPow2) d, HWY_SVE_V(BASE, BITS) a,  HWY_SVE_T(BASE, BITS) * p) {            \
+      auto b = LoadU(d, p); \
+      return ConcatLowerLower(d, b, a); \
   }
 HWY_SVE_FOREACH(HWY_NATIVE_LOAD_HIGHER, LoadHigher, _)
 #undef HWY_NATIVE_LOAD_HIGHER

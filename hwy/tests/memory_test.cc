@@ -604,6 +604,39 @@ HWY_NOINLINE void TestAllStoreTruncated() {
   ForU163264(ForPartialVectors<TestStoreTruncated>());
 }
 
+
+struct TestLoadHigher {
+  template <typename T, class D, HWY_IF_LANES_GT_D(D, 1)>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+  #if HWY_TARGET != HWY_SCALAR
+    const size_t N = Lanes(d);
+    const Vec<D> a = Set(d, 1);
+
+    // Generate a generic vector, then extract the pointer to the first entry
+    AlignedFreeUniquePtr<T[]> pa = AllocateAligned<T>(N);
+    std::fill(pa.get(), pa.get() + N, 20.0);
+    T* pointer = pa.get();
+
+    const Vec<D> b = Set(d, 20);
+    const Vec<D> expected_output_lanes = ConcatLowerLower(d, b, a);
+
+    HWY_ASSERT_VEC_EQ(d, expected_output_lanes, LoadHigher(d, a, pointer));
+
+  #else
+      (void)d;
+  #endif
+    }
+  template <typename T, class D, HWY_IF_LANES_D(D, 1)>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    (void)d;
+  }
+};
+
+HWY_NOINLINE void TestAllLoadHigher() {
+  ForFloatTypes(ForPartialVectors<TestLoadHigher>());
+}
+
+
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -624,6 +657,7 @@ HWY_EXPORT_AND_TEST_P(HwyMemoryTest, TestAllLoadN);
 HWY_EXPORT_AND_TEST_P(HwyMemoryTest, TestAllLoadNOr);
 HWY_EXPORT_AND_TEST_P(HwyMemoryTest, TestAllStoreN);
 HWY_EXPORT_AND_TEST_P(HwyMemoryTest, TestAllStoreTruncated);
+HWY_EXPORT_AND_TEST_P(HwyMemoryTest, TestAllLoadHigher);
 HWY_AFTER_TEST();
 }  // namespace hwy
 
