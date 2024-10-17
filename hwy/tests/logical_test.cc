@@ -178,7 +178,7 @@ struct TestMaskedOrOrZero {
     const auto v1 = Iota(d, 1);
     const auto v2 = Iota(d, 2);
 
-    HWY_ASSERT_VEC_EQ(d, Or(v2, v1), MaskedOrOrZero(all_true, Or(v2, v1), v2));
+    HWY_ASSERT_VEC_EQ(d, Or(v2, v1), MaskedOrOrZero(all_true, v1, v2));
 
     const MFromD<D> first_five = FirstN(d, 5);
     const Vec<D> v0 = Zero(d);
