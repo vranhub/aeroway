@@ -1113,6 +1113,7 @@ HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_Z, MaskedShiftLeftOrZero, lsl)
 HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_Z, MaskedShiftRightOrZero, asr)
 
 // ------------------------------ MaskedShiftRightSameOr
+#undef HWY_SVE_SHIFT_Z
 
 #define HWY_SVE_SHIFT_OR(BASE, CHAR, BITS, HALF, NAME, OP)                   \
   template <int kBits>                                                     \
@@ -1123,6 +1124,19 @@ HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_Z, MaskedShiftRightOrZero, asr)
 HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_OR, MaskedShiftRightOr, asr)
 
 #undef HWY_SVE_SHIFT_OR
+
+// ------------------------------ MaskedShrOr
+
+#define HWY_SVE_SHR_OR(BASE, CHAR, BITS, HALF, NAME, OP)                   \
+  HWY_API HWY_SVE_V(BASE, BITS) \
+    NAME(HWY_SVE_V(BASE, BITS) no, svbool_t m, HWY_SVE_V(BASE, BITS) v, HWY_SVE_V(BASE, BITS) shifts) {            \
+    const DFromV<decltype(v)> d; \
+  const RebindToUnsigned<decltype(d)> du; \
+  return svsel##_##CHAR##BITS(m, sv##OP##_s##BITS##_z(m, v, BitCast(du, shifts)), no);       \
+  }
+HWY_SVE_FOREACH_I(HWY_SVE_SHR_OR, MaskedShrOr, asr)
+
+#undef HWY_SVE_SHR_OR
 
 #if HWY_SVE_HAVE_2
 

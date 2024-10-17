@@ -726,6 +726,10 @@ HWY_API V MaskedShiftRightOr(V no, M m, V a) {
   return IfThenElse(m, ShiftRight<kshift>(a), no);
 }
 
+template <class V, class M>
+HWY_API V MaskedShrOr(V no, M m, V a, V shifts) {
+  return IfThenElse(m, (a >> shifts), no);
+}
 // ------------------------------ IfNegativeThenNegOrUndefIfZero
 
 #if (defined(HWY_NATIVE_INTEGER_IF_NEGATIVE_THEN_NEG) == \
