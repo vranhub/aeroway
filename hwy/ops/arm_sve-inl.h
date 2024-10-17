@@ -6779,6 +6779,21 @@ HWY_API V HighestSetBitIndex(V v) {
   return BitCast(d, Sub(Set(d, T{sizeof(T) * 8 - 1}), LeadingZeroCount(v)));
 }
 
+#ifdef HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+#undef HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+#else
+#define HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+#endif
+
+#define HWY_SVE_MASKED_LEADING_ZERO_COUNT(BASE, CHAR, BITS, HALF, NAME, OP) \
+  HWY_API HWY_SVE_V(BASE, BITS) NAME(svbool_t m, HWY_SVE_V(BASE, BITS) v) { \
+    const DFromV<decltype(v)> d;                                            \
+    return BitCast(d, sv##OP##_##CHAR##BITS##_z(m, v));                     \
+  }
+
+HWY_SVE_FOREACH_UI(HWY_SVE_MASKED_LEADING_ZERO_COUNT, MaskedLeadingZeroCountOrZero, clz)
+#undef HWY_SVE_LEADING_ZERO_COUNT
+
 // ================================================== END MACROS
 #undef HWY_SVE_ALL_PTRUE
 #undef HWY_SVE_D

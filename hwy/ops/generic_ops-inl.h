@@ -4055,6 +4055,20 @@ HWY_API V TrailingZeroCount(V v) {
 }
 #endif  // HWY_NATIVE_LEADING_ZERO_COUNT
 
+// ------------------------------ MaskedLeadingZeroCountOrZero
+#if (defined(HWY_NATIVE_MASKED_LEADING_ZERO_COUNT) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+#undef HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+#else
+#define HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+#endif
+
+template <class V, HWY_IF_NOT_FLOAT_NOR_SPECIAL_V(V), class M>
+HWY_API V MaskedLeadingZeroCountOrZero(M m, V v) {
+  return IfThenElseZero(m, LeadingZeroCount(v));
+}
+#endif // HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+
 // ------------------------------ AESRound
 
 // Cannot implement on scalar: need at least 16 bytes for TableLookupBytes.
