@@ -1138,6 +1138,8 @@ HWY_SVE_FOREACH_I(HWY_SVE_SHR_OR, MaskedShrOr, asr)
 
 #undef HWY_SVE_SHR_OR
 
+// ------------------------------ RotateRight
+
 #if HWY_SVE_HAVE_2
 
 #define HWY_SVE_ROTATE_RIGHT_N(BASE, CHAR, BITS, HALF, NAME, OP) \

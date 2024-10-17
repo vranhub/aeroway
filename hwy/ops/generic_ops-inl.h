@@ -6845,7 +6845,7 @@ HWY_INLINE V UI8ReverseBitsStep(V v) {
   const auto shr_result = BitCast(d, ShiftRight<kShiftAmt>(v_to_shift));
   const auto shr_result_mask =
       BitCast(d, Set(du, static_cast<uint8_t>(kShrResultMask)));
-  return And(shr_result, shr_result_mask),
+  return Or(And(shr_result, shr_result_mask),
             AndNot(shr_result_mask, shl_result));
 }
 
