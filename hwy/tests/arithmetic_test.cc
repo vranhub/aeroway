@@ -332,7 +332,6 @@ HWY_NOINLINE void TestAllAddLower() {
   ForAllTypes(ForPartialVectors<TestAddLower>());
 }
 
-
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -349,7 +348,6 @@ HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAbs);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllNeg);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllIntegerAbsDiff);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAddLower);
-
 HWY_AFTER_TEST();
 }  // namespace hwy
 

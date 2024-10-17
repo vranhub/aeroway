@@ -7544,9 +7544,6 @@ HWY_API bool AllZeros(V a) {
 }
 #endif  // HWY_NATIVE_ALLZEROS
 
-
-
-
 // ================================================== Operator wrapper
 
 // SVE* and RVV currently cannot define operators and have already defined
