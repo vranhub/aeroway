@@ -608,7 +608,6 @@ HWY_NOINLINE void TestAllStoreTruncated() {
 struct TestLoadHigher {
   template <typename T, class D, HWY_IF_LANES_GT_D(D, 1)>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
-  #if HWY_TARGET != HWY_SCALAR
     const size_t N = Lanes(d);
     const Vec<D> a = Set(d, 1);
 
@@ -622,9 +621,6 @@ struct TestLoadHigher {
 
     HWY_ASSERT_VEC_EQ(d, expected_output_lanes, LoadHigher(d, a, pointer));
 
-  #else
-      (void)d;
-  #endif
     }
   template <typename T, class D, HWY_IF_LANES_D(D, 1)>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
@@ -633,7 +629,7 @@ struct TestLoadHigher {
 };
 
 HWY_NOINLINE void TestAllLoadHigher() {
-  ForFloatTypes(ForPartialVectors<TestLoadHigher>());
+  ForAllTypes(ForPartialVectors<TestLoadHigher>());
 }
 
 

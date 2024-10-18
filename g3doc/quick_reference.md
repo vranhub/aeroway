@@ -447,8 +447,9 @@ time-critical code:
     Potentially slow, it may be better set all elements of an aligned array and
     then `Load` it.
 
-*   <code> V **LoadHigher**(V, T* p)</code>: return a copy of the 128/f64 V with
-    the high value set to the value at p
+*   <code> V **LoadHigher**(D d, V v, T* p)</code>: Loads `Lanes(d)/2` lanes from
+    `p` into the upper lanes of the result vector and the lower half of `v` into
+    the lower lanes.
 
 ### Getting/setting blocks
 
