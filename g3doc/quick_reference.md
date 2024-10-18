@@ -916,6 +916,8 @@ not a concern, these are equivalent to, and potentially more efficient than,
     or `no[i]` if `m[i]` is false.
 *   <code>V **MaskedMaxOr**(V no, M m, V a, V b)</code>: returns `Max(a, b)[i]`
     or `no[i]` if `m[i]` is false.
+*   <code>V **MaskedMaxOrZero**(M m, V a, V b)</code>: returns `Max(a, b)[i]`
+    or `zero` if `m[i]` is false.
 *   <code>V **MaskedAddOr**(V no, M m, V a, V b)</code>: returns `a[i] + b[i]`
     or `no[i]` if `m[i]` is false.
 *   <code>V **MaskedSubOr**(V no, M m, V a, V b)</code>: returns `a[i] - b[i]`
@@ -1187,6 +1189,9 @@ types, and on SVE/RVV.
     <code>V **Not**(V v)</code>: returns `~v[i]`.
 
 *   <code>V **AndNot**(V a, V b)</code>: returns `~a[i] & b[i]`.
+
+*   <code>V **MaskedOrOrZero**(M m, V a, V b)</code>: returns `Or(a, b)[i]`
+    or `zero` if `m[i]` is false.
 
 The following three-argument functions may be more efficient than assembling
 them from 2-argument functions:
