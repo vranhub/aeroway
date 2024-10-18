@@ -5278,6 +5278,12 @@ template <size_t kN, HWY_IF_LANES_GT(kN, 31)>
 constexpr unsigned MaxMaskBits() {
   return ~0u;
 }
+
+template <class D>
+constexpr int SufficientPow2ForMask() {
+  return HWY_MAX(
+      D().Pow2() - 3 - static_cast<int>(FloorLog2(sizeof(TFromD<D>))), -3);
+}
 }  // namespace detail
 
 template <class D, HWY_IF_T_SIZE_D(D, 1), HWY_IF_LANES_LE_D(D, 8)>
@@ -5304,11 +5310,13 @@ HWY_API MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) {
 template <class D, HWY_IF_T_SIZE_D(D, 1), HWY_IF_LANES_GT_D(D, 8)>
 HWY_API MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) {
 #if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
-  const ScalableTag<uint8_t> du8;
-  const ScalableTag<uint16_t> du16;
+  const ScalableTag<uint8_t, detail::SufficientPow2ForMask<D>()> du8;
+  const ScalableTag<uint16_t, detail::SufficientPow2ForMask<D>()> du16;
   // There are exactly 16 mask bits for 128 vector bits of 8-bit lanes.
   return detail::U8MaskBitsVecToMask(
-      d, BitCast(du8, Set(du16, static_cast<uint16_t>(mask_bits))));
+      d, detail::ChangeLMUL(
+             ScalableTag<uint8_t>(),
+             BitCast(du8, Set(du16, static_cast<uint16_t>(mask_bits)))));
 #else
   // Slow fallback for completeness; the above bits to mask cast is preferred.
   const RebindToUnsigned<decltype(d)> du8;
@@ -5335,10 +5343,11 @@ HWY_API MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) {
   if (kN < 8) mask_bits &= detail::MaxMaskBits<kN>();
 
 #if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
-  const ScalableTag<uint8_t> du8;
+  const ScalableTag<uint8_t, detail::SufficientPow2ForMask<D>()> du8;
   // There are exactly 8 mask bits for 128 vector bits of 16-bit lanes.
-  return detail::U8MaskBitsVecToMask(d,
-                                     Set(du8, static_cast<uint8_t>(mask_bits)));
+  return detail::U8MaskBitsVecToMask(
+      d, detail::ChangeLMUL(ScalableTag<uint8_t>(),
+                            Set(du8, static_cast<uint8_t>(mask_bits))));
 #else
   // Slow fallback for completeness; the above bits to mask cast is preferred.
   const RebindToUnsigned<D> du;
@@ -5354,9 +5363,10 @@ HWY_API MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) {
   if (kN < 4) mask_bits &= detail::MaxMaskBits<kN>();
 
 #if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
-  const ScalableTag<uint8_t> du8;
+  const ScalableTag<uint8_t, detail::SufficientPow2ForMask<D>()> du8;
   return detail::U8MaskBitsVecToMask(
-      d, Set(du8, static_cast<uint8_t>(mask_bits * 0x11)));
+      d, detail::ChangeLMUL(ScalableTag<uint8_t>(),
+                            Set(du8, static_cast<uint8_t>(mask_bits * 0x11))));
 #else
   // Slow fallback for completeness; the above bits to mask cast is preferred.
   const RebindToUnsigned<D> du;
@@ -5371,9 +5381,10 @@ HWY_API MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) {
   if (kN < 2) mask_bits &= detail::MaxMaskBits<kN>();
 
 #if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
-  const ScalableTag<uint8_t> du8;
+  const ScalableTag<uint8_t, detail::SufficientPow2ForMask<D>()> du8;
   return detail::U8MaskBitsVecToMask(
-      d, Set(du8, static_cast<uint8_t>(mask_bits * 0x55)));
+      d, detail::ChangeLMUL(ScalableTag<uint8_t>(),
+                            Set(du8, static_cast<uint8_t>(mask_bits * 0x55))));
 #else
   // Slow fallback for completeness; the above bits to mask cast is preferred.
   const RebindToUnsigned<D> du;
@@ -6017,6 +6028,23 @@ HWY_INLINE MFromD<D> Lt128(D d, const VFromD<D> a, const VFromD<D> b) {
 #endif  // HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
 
 // ------------------------------ Lt128Upper
+#if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
+
+template <class D>
+HWY_INLINE MFromD<D> Lt128Upper(D d, const VFromD<D> a, const VFromD<D> b) {
+  static_assert(IsSame<TFromD<D>, uint64_t>(), "D must be u64");
+  auto du8mf8 = ScalableTag<uint8_t, -3>{};
+  const vuint8mf8_t ltHL =
+      detail::ChangeLMUL(du8mf8, detail::MaskToU8MaskBitsVec(Lt(a, b)));
+  const vuint8mf8_t ltHx = detail::AndS(ltHL, 0xaa);
+  const vuint8mf8_t ltxL = ShiftRight<1>(ltHx);
+  auto du8m1 = ScalableTag<uint8_t>{};
+  return detail::U8MaskBitsVecToMask(d,
+                                     detail::ChangeLMUL(du8m1, Or(ltHx, ltxL)));
+}
+
+#else
+
 template <class D>
 HWY_INLINE MFromD<D> Lt128Upper(D d, const VFromD<D> a, const VFromD<D> b) {
   static_assert(IsSame<TFromD<D>, uint64_t>(), "D must be u64");
@@ -6028,7 +6056,27 @@ HWY_INLINE MFromD<D> Lt128Upper(D d, const VFromD<D> a, const VFromD<D> b) {
   return MaskFromVec(OddEven(ltHL, down));
 }
 
+#endif  // HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
+
 // ------------------------------ Eq128
+#if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
+
+template <class D>
+HWY_INLINE MFromD<D> Eq128(D d, const VFromD<D> a, const VFromD<D> b) {
+  static_assert(IsSame<TFromD<D>, uint64_t>(), "D must be u64");
+  auto du8mf8 = ScalableTag<uint8_t, -3>{};
+  const vuint8mf8_t eqHL =
+      detail::ChangeLMUL(du8mf8, detail::MaskToU8MaskBitsVec(Eq(a, b)));
+  const vuint8mf8_t eqxH = ShiftRight<1>(eqHL);
+  const vuint8mf8_t result0L = detail::AndS(And(eqHL, eqxH), 0x55);
+  const vuint8mf8_t resultH0 = Add(result0L, result0L);
+  auto du8m1 = ScalableTag<uint8_t>{};
+  return detail::U8MaskBitsVecToMask(
+      d, detail::ChangeLMUL(du8m1, Or(result0L, resultH0)));
+}
+
+#else
+
 template <class D>
 HWY_INLINE MFromD<D> Eq128(D d, const VFromD<D> a, const VFromD<D> b) {
   static_assert(IsSame<TFromD<D>, uint64_t>(), "D must be u64");
@@ -6040,7 +6088,26 @@ HWY_INLINE MFromD<D> Eq128(D d, const VFromD<D> a, const VFromD<D> b) {
   return MaskFromVec(eq);
 }
 
+#endif
+
 // ------------------------------ Eq128Upper
+#if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
+
+template <class D>
+HWY_INLINE MFromD<D> Eq128Upper(D d, const VFromD<D> a, const VFromD<D> b) {
+  static_assert(IsSame<TFromD<D>, uint64_t>(), "D must be u64");
+  auto du8mf8 = ScalableTag<uint8_t, -3>{};
+  const vuint8mf8_t eqHL =
+      detail::ChangeLMUL(du8mf8, detail::MaskToU8MaskBitsVec(Eq(a, b)));
+  const vuint8mf8_t eqHx = detail::AndS(eqHL, 0xaa);
+  const vuint8mf8_t eqxL = ShiftRight<1>(eqHx);
+  auto du8m1 = ScalableTag<uint8_t>{};
+  return detail::U8MaskBitsVecToMask(d,
+                                     detail::ChangeLMUL(du8m1, Or(eqHx, eqxL)));
+}
+
+#else
+
 template <class D>
 HWY_INLINE MFromD<D> Eq128Upper(D d, const VFromD<D> a, const VFromD<D> b) {
   static_assert(IsSame<TFromD<D>, uint64_t>(), "D must be u64");
@@ -6049,7 +6116,27 @@ HWY_INLINE MFromD<D> Eq128Upper(D d, const VFromD<D> a, const VFromD<D> b) {
   return MaskFromVec(OddEven(eqHL, detail::Slide1Down(eqHL)));
 }
 
+#endif
+
 // ------------------------------ Ne128
+#if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
+
+template <class D>
+HWY_INLINE MFromD<D> Ne128(D d, const VFromD<D> a, const VFromD<D> b) {
+  static_assert(IsSame<TFromD<D>, uint64_t>(), "D must be u64");
+  auto du8mf8 = ScalableTag<uint8_t, -3>{};
+  const vuint8mf8_t neHL =
+      detail::ChangeLMUL(du8mf8, detail::MaskToU8MaskBitsVec(Ne(a, b)));
+  const vuint8mf8_t nexH = ShiftRight<1>(neHL);
+  const vuint8mf8_t result0L = detail::AndS(Or(neHL, nexH), 0x55);
+  const vuint8mf8_t resultH0 = Add(result0L, result0L);
+  auto du8m1 = ScalableTag<uint8_t>{};
+  return detail::U8MaskBitsVecToMask(
+      d, detail::ChangeLMUL(du8m1, Or(result0L, resultH0)));
+}
+
+#else
+
 template <class D>
 HWY_INLINE MFromD<D> Ne128(D d, const VFromD<D> a, const VFromD<D> b) {
   static_assert(IsSame<TFromD<D>, uint64_t>(), "D must be u64");
@@ -6060,7 +6147,26 @@ HWY_INLINE MFromD<D> Ne128(D d, const VFromD<D> a, const VFromD<D> b) {
   return MaskFromVec(Or(neHL, neLH));
 }
 
+#endif
+
 // ------------------------------ Ne128Upper
+#if HWY_COMPILER_CLANG >= 1700 || HWY_COMPILER_GCC_ACTUAL >= 1400
+
+template <class D>
+HWY_INLINE MFromD<D> Ne128Upper(D d, const VFromD<D> a, const VFromD<D> b) {
+  static_assert(IsSame<TFromD<D>, uint64_t>(), "D must be u64");
+  auto du8mf8 = ScalableTag<uint8_t, -3>{};
+  const vuint8mf8_t neHL =
+      detail::ChangeLMUL(du8mf8, detail::MaskToU8MaskBitsVec(Ne(a, b)));
+  const vuint8mf8_t neHx = detail::AndS(neHL, 0xaa);
+  const vuint8mf8_t nexL = ShiftRight<1>(neHx);
+  auto du8m1 = ScalableTag<uint8_t>{};
+  return detail::U8MaskBitsVecToMask(d,
+                                     detail::ChangeLMUL(du8m1, Or(neHx, nexL)));
+}
+
+#else
+
 template <class D>
 HWY_INLINE MFromD<D> Ne128Upper(D d, const VFromD<D> a, const VFromD<D> b) {
   static_assert(IsSame<TFromD<D>, uint64_t>(), "D must be u64");
@@ -6071,6 +6177,8 @@ HWY_INLINE MFromD<D> Ne128Upper(D d, const VFromD<D> a, const VFromD<D> b) {
   // Replicate H to its neighbor.
   return MaskFromVec(OddEven(neHL, down));
 }
+
+#endif
 
 // ------------------------------ Min128, Max128 (Lt128)
 
