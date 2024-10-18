@@ -723,6 +723,26 @@ HWY_API MFromD<D> MaskedIsNaN(const M m, const V v) {
 }
 #endif  // HWY_NATIVE_MASKED_COMP
 
+// ------------------------------ MaskedShift
+template <int kshift, class V, class M>
+HWY_API V MaskedShiftLeftOrZero(M m, V a) {
+  return IfThenElseZero(m, ShiftLeft<kshift>(a));
+}
+
+template <int kshift, class V, class M>
+HWY_API V MaskedShiftRightOrZero(M m, V a) {
+  return IfThenElseZero(m, ShiftRight<kshift>(a));
+}
+
+template <int kshift, class V, class M>
+HWY_API V MaskedShiftRightOr(V no, M m, V a) {
+  return IfThenElse(m, ShiftRight<kshift>(a), no);
+}
+
+template <class V, class M>
+HWY_API V MaskedShrOr(V no, M m, V a, V shifts) {
+  return IfThenElse(m, Shr(a, shifts), no);
+}
 // ------------------------------ IfNegativeThenNegOrUndefIfZero
 
 #if (defined(HWY_NATIVE_INTEGER_IF_NEGATIVE_THEN_NEG) == \
