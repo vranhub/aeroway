@@ -728,7 +728,7 @@ HWY_API V MaskedShiftRightOr(V no, M m, V a) {
 
 template <class V, class M>
 HWY_API V MaskedShrOr(V no, M m, V a, V shifts) {
-  return IfThenElse(m, (a >> shifts), no);
+  return IfThenElse(m, Shr(a, shifts), no);
 }
 // ------------------------------ IfNegativeThenNegOrUndefIfZero
 

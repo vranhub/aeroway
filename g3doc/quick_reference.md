@@ -1086,7 +1086,7 @@ Per-lane variable shifts (slow if SSSE3/SSE4, or 16-bit, or Shr i64 on AVX2):
     `mask[i]` is false.
 
 *   `V`: `{u,i}` \
-    <code>V **MaskedShiftRightOr**(V no, M mask, V a, V shifts)</code> returns `a[i] >> shifts[i]` or `no` if
+    <code>V **MaskedShrOr**(V no, M mask, V a, V shifts)</code> returns `a[i] >> shifts[i]` or `no` if
     `mask[i]` is false.
 
 #### Floating-point rounding
