@@ -190,7 +190,7 @@ struct TestMaskedOrOrZero {
 };
 
 HWY_NOINLINE void TestAllMaskedLogical() {
-  ForSignedTypes(ForPartialVectors<TestMaskedOrOrZero>());
+  ForAllTypes(ForPartialVectors<TestMaskedOrOrZero>());
 }
 
 // NOLINTNEXTLINE(google-readability-namespace-comments)

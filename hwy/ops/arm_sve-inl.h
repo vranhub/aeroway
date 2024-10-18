@@ -289,11 +289,6 @@ HWY_SVE_FOREACH_BF16_UNCONDITIONAL(HWY_SPECIALIZE, _, _)
     return sv##OP##_##CHAR##BITS##_m(m, a, b, c);               \
   }
 
-#define HWY_SVE_RETV_ARGMVV_Z(BASE, CHAR, BITS, HALF, NAME, OP)\
-  HWY_API HWY_SVE_V(BASE, BITS)                               \
-    NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) {               \
-    return sv##OP##_##CHAR##BITS##_z(m, a, b);                   \
-  }
 // ------------------------------ Lanes
 
 namespace detail {
@@ -762,7 +757,7 @@ HWY_API V Or(const V a, const V b) {
 }
 
 // ------------------------------ MaskedOrOrZero
-HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGMVV_Z, MaskedOrOrZero, orr)
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGMVVZ, MaskedOrOrZero, orr)
 
 // ------------------------------ Xor
 
@@ -1607,7 +1602,7 @@ HWY_API svbool_t LowerHalfOfMask(D /*d*/, svbool_t m) {
 namespace detail {
 HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV, MaskedMin, min)
 HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV, MaskedMax, max)
-HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV_Z, MaskedMaxOrZero, max)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVVZ, MaskedMaxOrZero, max)
 HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV, MaskedAdd, add)
 HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV, MaskedSub, sub)
 HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV, MaskedMul, mul)

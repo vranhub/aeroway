@@ -152,7 +152,6 @@ struct TestMaskedMaxOrZero {
     const Vec<D> v1_exp = IfThenElse(first_five, v2, v0);
 
     auto output =  MaskedMaxOrZero(first_five, v1, v2);
-    Print(DFromV<decltype(output)>(), "output ", output, 0, Lanes(DFromV<decltype(output)>()));
 
     HWY_ASSERT_VEC_EQ(d, v1_exp, output);
 
@@ -160,7 +159,7 @@ struct TestMaskedMaxOrZero {
 };
 
 HWY_NOINLINE void TestAllMaskedMaxOrZero() {
-  ForSignedTypes(ForPartialVectors<TestMaskedMaxOrZero>());
+  ForAllTypes(ForPartialVectors<TestMaskedMaxOrZero>());
 }
 
 // NOLINTNEXTLINE(google-readability-namespace-comments)

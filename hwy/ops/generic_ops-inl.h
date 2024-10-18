@@ -7750,12 +7750,12 @@ HWY_API bool AllZeros(V a) {
 }
 #endif  // HWY_NATIVE_ALLZEROS
 
-template <class V, HWY_IF_SIGNED_V(V), class M>
+template <class V, class M>
 HWY_API V MaskedMaxOrZero(M m, V a, V b) {
   return IfThenElseZero(m, (Max(a, b)));
 }
 
-template <class V, HWY_IF_SIGNED_V(V), class M>
+template <class V, class M>
 HWY_API V MaskedOrOrZero(M m, V a, V b) {
   return IfThenElseZero(m, Or(a, b));
 }
