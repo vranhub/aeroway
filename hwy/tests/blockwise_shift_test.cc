@@ -128,12 +128,17 @@ struct TestShiftRightLanes {
     HWY_ASSERT_VEC_EQ(d, v, ShiftRightLanes<0>(d, v));
 
     constexpr size_t kLanesPerBlock = 16 / sizeof(T);
-
+    // Calculating expected using a tertiary operator causes an error in
+    // expected vectors for SVE/SVE2
     for (size_t i = 0; i < N; ++i) {
-      const size_t mod = i % kLanesPerBlock;
-      expected[i] = ConvertScalarTo<T>(
-          ((mod == kLanesPerBlock - 1) || (i >= N - 1)) ? 0 : (2 + i));
+      expected[i] = ConvertScalarTo<T>(2 + i);
     }
+    // Zero every mod(i % kLanesPerBlock) == kLanesPerBlock - 1
+    for (size_t i = kLanesPerBlock - 1; i < N; i += kLanesPerBlock) {
+      expected[i] = 0;
+    }
+    // Zero i == N - 1
+    expected[N - 1] = 0;
     HWY_ASSERT_VEC_EQ(d, expected.get(), ShiftRightLanes<1>(d, v));
 #else
     (void)d;
