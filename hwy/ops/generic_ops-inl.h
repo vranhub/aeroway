@@ -97,6 +97,21 @@ HWY_API Vec<D> Inf(D d) {
   return BitCast(d, Set(du, max_x2 >> 1));
 }
 
+// ------------------------------ SetOr/SetOrZero
+
+template <class V, typename T = TFromV<V>, typename D = DFromV<V>,
+         typename M = MFromD<D>>
+HWY_API V SetOr(V no, M m, T a) {
+  D d;
+  return IfThenElse(m, Set(d, a), no);
+}
+
+template <class D, typename V = VFromD<D>, typename M = MFromD<D>,
+         typename T = TFromD<D>>
+HWY_API V SetOrZero(D d, M m, T a) {
+  return IfThenElseZero(m, Set(d, a));
+}
+
 // ------------------------------ ZeroExtendResizeBitCast
 
 // The implementation of detail::ZeroExtendResizeBitCast for the HWY_EMU128

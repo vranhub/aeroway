@@ -440,6 +440,29 @@ using VFromD = decltype(Set(D(), TFromD<D>()));
 
 using VBF16 = VFromD<ScalableTag<bfloat16_t>>;
 
+// ------------------------------ SetOr/SetOrZero
+
+#define HWY_SVE_SET_OR(BASE, CHAR, BITS, HALF, NAME, OP)                      \
+  HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_V(BASE, BITS) inactive,          \
+                                     svbool_t m,                              \
+                                     HWY_SVE_T(BASE, BITS) op) {              \
+    return sv##OP##_##CHAR##BITS##_m(inactive, m, op);                        \
+  }
+
+HWY_SVE_FOREACH(HWY_SVE_SET_OR, SetOr, dup_n)
+#undef HWY_SVE_SET_OR
+
+#define HWY_SVE_SET_OR_ZERO(BASE, CHAR, BITS, HALF, NAME, OP)                 \
+  template <size_t N, int kPow2>                                              \
+  HWY_API HWY_SVE_V(BASE, BITS) NAME(HWY_SVE_D(BASE, BITS, N, kPow2) /* d */, \
+                                     svbool_t m,                              \
+                                     HWY_SVE_T(BASE, BITS) op) {              \
+    return sv##OP##_##CHAR##BITS##_z(m, op);                                  \
+  }
+
+HWY_SVE_FOREACH(HWY_SVE_SET_OR_ZERO, SetOrZero, dup_n)
+#undef HWY_SVE_SET_OR_ZERO
+
 // ------------------------------ Zero
 
 template <class D>

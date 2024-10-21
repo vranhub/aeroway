@@ -546,6 +546,66 @@ HWY_NOINLINE void TestAllDup128MaskFromMaskBits() {
   ForAllTypes(ForPartialVectors<TestDup128MaskFromMaskBits>());
 }
 
+struct TestSetOr {
+  template <class D>
+  void testWithMask(D d, MFromD<D> m) {
+    TFromD<D> a = 1;
+    auto yes = Set(d, a);
+    auto no = Set(d, 2);
+    auto expected = IfThenElse(m, yes, no);
+    auto actual = SetOr(no, m, a);
+    HWY_ASSERT_VEC_EQ(d, expected, actual);
+  }
+  template <class T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    // All False
+    testWithMask(d, MaskFalse(d));
+    auto N = Lanes(d);
+    // All True
+    testWithMask(d, FirstN(d, N));
+    // Lower half
+    testWithMask(d, FirstN(d, N/2));
+    // Upper half
+    testWithMask(d, Not(FirstN(d, N/2)));
+    // Interleaved
+    testWithMask(d, MaskFromVec(InterleaveLower(Zero(d), Set(d, (TFromD<D>)-1))));
+  }
+};
+
+HWY_NOINLINE void TestAllSetOr() {
+  ForAllTypes(ForShrinkableVectors<TestSetOr>());
+}
+
+struct TestSetOrZero {
+  template <class D>
+  void testWithMask(D d, MFromD<D> m) {
+    TFromD<D> a = 1;
+    auto yes = Set(d, a);
+    auto no = Zero(d);
+    auto expected = IfThenElse(m, yes, no);
+    auto actual = SetOrZero(d, m, a);
+    HWY_ASSERT_VEC_EQ(d, expected, actual);
+  }
+  template <class T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    // All False
+    testWithMask(d, MaskFalse(d));
+    auto N = Lanes(d);
+    // All True
+    testWithMask(d, FirstN(d, N));
+    // Lower half
+    testWithMask(d, FirstN(d, N/2));
+    // Upper half
+    testWithMask(d, Not(FirstN(d, N/2)));
+    // Interleaved
+    testWithMask(d, MaskFromVec(InterleaveLower(Zero(d), Set(d, (TFromD<D>)-1))));
+  }
+};
+
+HWY_NOINLINE void TestAllSetOrZero() {
+  ForAllTypes(ForShrinkableVectors<TestSetOrZero>());
+}
+
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -569,6 +629,8 @@ HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllSetAtOrBeforeFirst);
 HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllSetOnlyFirst);
 HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllSetAtOrAfterFirst);
 HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllDup128MaskFromMaskBits);
+HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllSetOr);
+HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllSetOrZero);
 HWY_AFTER_TEST();
 }  // namespace hwy
 

@@ -429,6 +429,10 @@ for comparisons, for example `Lt` instead of `operator<`.
     the result, with `t0` in the least-significant (lowest-indexed) lane of each
     128-bit block and `tK` in the most-significant (highest-indexed) lane of
     each 128-bit block: `{t0, t1, ..., tK}`
+*   <code>V **SetOr**(V no, M m, T a)</code>: returns N-lane vector with lane
+    `i` equal to `a` if `m[i]` is true else `no[i]`.
+*   <code>V **SetOrZero**(D d, M m, T a)</code>: returns N-lane vector with lane
+    `i` equal to `a` if `m[i]` is true else 0.
 
 ### Getting/setting lanes
 
