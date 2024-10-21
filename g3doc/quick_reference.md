@@ -1656,6 +1656,9 @@ aligned memory at indices which are not a multiple of the vector length):
 
 *   <code>Vec&lt;D&gt; **LoadU**(D, const T* p)</code>: returns `p[i]`.
 
+*   <code>Vec&lt;D&gt; **MaskedLoadU**(D, M m, const T* p)</code>: returns `p[i]`
+    where mask is true and returns zero otherwise.
+
 *   <code>Vec&lt;D&gt; **LoadDup128**(D, const T* p)</code>: returns one 128-bit
     block loaded from `p` and broadcasted into all 128-bit block\[s\]. This may
     be faster than broadcasting single values, and is more convenient than
