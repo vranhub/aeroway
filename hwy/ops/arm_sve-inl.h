@@ -6261,6 +6261,57 @@ HWY_API svuint64_t MulOdd(const svuint64_t a, const svuint64_t b) {
   return detail::InterleaveOdd(lo, hi);
 }
 
+// ------------------------------ PairwiseAdd/PairwiseSub
+#if HWY_TARGET != HWY_SCALAR
+#if HWY_SVE_HAVE_2 || HWY_IDE
+
+#ifdef HWY_NATIVE_PAIRWISE_ADD
+#undef HWY_NATIVE_PAIRWISE_ADD
+#else
+#define HWY_NATIVE_PAIRWISE_ADD
+#endif
+
+// sve interleaves results from a and b during svaddp operation
+namespace detail {
+#define HWY_SVE_SV_PAIRWISE_ADD(BASE, CHAR, BITS, HALF, NAME, OP) \
+  HWY_API HWY_SVE_V(BASE, BITS)                                   \
+      NAME(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) {    \
+    return sv##OP##_##CHAR##BITS##_m(HWY_SVE_PTRUE(BITS), a, b);  \
+  }
+
+HWY_SVE_FOREACH(HWY_SVE_SV_PAIRWISE_ADD, SvPairwiseAdd, addp)
+#undef HWY_SVE_SV_PAIRWISE_ADD
+}
+
+// Uninterleaved pairwise add which returns [pwa(b), pwa(a)]
+template <class D, class V, HWY_IF_LANES_GT_D(D, 1)>
+HWY_API V PairwiseAdd(D d, V a, V b) {
+  const auto sv_pwa = detail::SvPairwiseAdd(a, b);
+  return ConcatEven(d, DupOdd(sv_pwa), sv_pwa);
+}
+
+// Uninterleaved pairwise subtraction which returns [pws(b), pws(a)]
+template <class D, class V, HWY_IF_LANES_GT_D(D, 1)>
+HWY_API V PairwiseSub(D d, V a, V b) {
+  using T = TFromD<D>;
+  using TNegate = If<!IsSigned<T>(), MakeSigned<T>, T>;
+
+  const Rebind<TNegate, D> d_negate;
+
+  // Negate every even value of a and b
+  const auto a_negatable = BitCast(d_negate, a);
+  const auto b_negatable = BitCast(d_negate, b);
+
+  const auto a_even_neg = BitCast(d, OddEven(a_negatable, Neg(a_negatable)));
+  const auto b_even_neg = BitCast(d, OddEven(b_negatable, Neg(b_negatable)));
+
+  const auto sv_pws = detail::SvPairwiseAdd(a_even_neg, b_even_neg);
+  return ConcatEven(d, DupOdd(sv_pws), sv_pws);
+}
+
+#endif // HWY_SVE_HAVE_2
+#endif // HWY_TARGET != HWY_SCALAR
+
 // ------------------------------ WidenMulPairwiseAdd
 
 template <size_t N, int kPow2>

@@ -271,6 +271,81 @@ struct TestNegOverflow {
   }
 };
 
+struct TestPairwiseAdd {
+  template <typename T, class D, HWY_IF_LANES_GT_D(D, 1)>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const Vec<D> a = Iota(d, 1);
+    const Vec<D> b = Iota(d, 2);
+
+    const size_t N = Lanes(d);
+    if (N < 2) { return; }
+    T even_val_a, odd_val_a, even_val_b, odd_val_b;
+    auto expected = AllocateAligned<T>(N);
+    HWY_ASSERT(expected);
+
+    for (size_t i = 0; i < N/2; ++i) {
+      size_t j = 2 * i;
+
+      // Results of a are stored in the lower half, results of b are stored in
+      // upper half
+      even_val_a = ConvertScalarTo<T>(j + 1);  // a[j]
+      odd_val_a = ConvertScalarTo<T>(j + 2);  // a[j+1]
+      even_val_b = ConvertScalarTo<T>(j + 2);  // b[j]
+      odd_val_b = ConvertScalarTo<T>(j + 3);  // b[j+1]
+
+      expected[i] = even_val_a + odd_val_a;
+      expected[i + N/2] = even_val_b + odd_val_b;
+    }
+
+    HWY_ASSERT_VEC_EQ(d, expected.get(), PairwiseAdd(d, a, b));
+  }
+
+  template <typename T, class D, HWY_IF_LANES_D(D, 1)>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    (void)d;
+  }
+};
+
+struct TestPairwiseSub {
+  template <typename T, class D, HWY_IF_LANES_GT_D(D, 1)>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const Vec<D> a = Iota(d, 1);
+    const Vec<D> b = Iota(d, 2);
+
+    const size_t N = Lanes(d);
+    if (N < 2) { return; }
+    T even_val_a, odd_val_a, even_val_b, odd_val_b;
+    auto expected = AllocateAligned<T>(N);
+    HWY_ASSERT(expected);
+
+    for (size_t i = 0; i < N/2; ++i) {
+      size_t j = 2 * i;
+
+      // Results of a are stored in the lower half, results of b are stored in
+      // upper half
+      even_val_a = ConvertScalarTo<T>(j + 1);  // a[j]
+      odd_val_a = ConvertScalarTo<T>(j + 2);  // a[j+1]
+      even_val_b = ConvertScalarTo<T>(j + 2);  // b[j]
+      odd_val_b = ConvertScalarTo<T>(j + 3);  // b[j+1]
+
+      expected[i] = odd_val_a - even_val_a;
+      expected[i + N/2] = odd_val_b - even_val_b;
+    }
+
+    HWY_ASSERT_VEC_EQ(d, expected.get(), PairwiseSub(d, a, b));
+  }
+
+  template <typename T, class D, HWY_IF_LANES_D(D, 1)>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    (void)d;
+  }
+};
+
+HWY_NOINLINE void TestAllPairwise() {
+  ForAllTypes(ForPartialVectors<TestPairwiseAdd>());
+  ForAllTypes(ForPartialVectors<TestPairwiseSub>());
+}
+
 HWY_NOINLINE void TestAllNeg() {
   ForFloatTypes(ForPartialVectors<TestFloatNeg>());
   // Always supported, even if !HWY_HAVE_FLOAT16.
@@ -380,6 +455,7 @@ HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAbs);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllNeg);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllIntegerAbsDiff);
 HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllAddLower);
+HWY_EXPORT_AND_TEST_P(HwyArithmeticTest, TestAllPairwise);
 HWY_AFTER_TEST();
 }  // namespace hwy
 
