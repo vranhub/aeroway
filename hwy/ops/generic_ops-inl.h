@@ -1366,6 +1366,13 @@ HWY_API V GetExponent(V v) {
 
 #endif  // HWY_NATIVE_GET_EXPONENT
 
+// ------------------------------ MaskedLoadU
+template <class D, class M>
+HWY_API VFromD<D> MaskedLoadU(D d, M m,
+                            const TFromD<D>* HWY_RESTRICT unaligned) {
+  return IfThenElseZero(m, LoadU(d, unaligned));
+}
+
 // ------------------------------ LoadInterleaved2
 
 #if HWY_IDE || \

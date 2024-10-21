@@ -2161,6 +2161,18 @@ HWY_API void BlendedStore(VFromD<D> v, MFromD<D> m, D d,
 
 #undef HWY_SVE_MEM
 
+#define HWY_SVE_MASKED_MEM(BASE, CHAR, BITS, HALF, NAME, OP)          \
+  template <size_t N, int kPow2>                                      \
+  HWY_API HWY_SVE_V(BASE, BITS)                                       \
+      MaskedLoadU(HWY_SVE_D(BASE, BITS, N, kPow2) /* d */, svbool_t m,\
+                      const HWY_SVE_T(BASE, BITS) * HWY_RESTRICT p) { \
+    return svld1_##CHAR##BITS(m, detail::NativeLanePointer(p));       \
+  }
+
+HWY_SVE_FOREACH(HWY_SVE_MASKED_MEM, _, _)
+
+#undef HWY_SVE_MASKED_MEM
+
 #if HWY_TARGET != HWY_SVE2_128
 namespace detail {
 #define HWY_SVE_LOAD_DUP128(BASE, CHAR, BITS, HALF, NAME, OP)   \

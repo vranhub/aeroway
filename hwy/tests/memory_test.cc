@@ -65,6 +65,18 @@ struct TestLoadStore {
     for (size_t i = 0; i < N; ++i) {
       HWY_ASSERT_EQ(i + 2, lanes3[i]);
     }
+    
+    // Unaligned masked load
+    const MFromD<D> first_3 = FirstN(d, 3);
+    const VFromD<D> vu2 = MaskedLoadU(d, first_3, &lanes[1]);
+    Store(vu2, d, lanes3.get());
+    for (size_t i = 0; i < N; ++i) {
+      if (i<3) {
+        HWY_ASSERT_EQ(i + 2, lanes3[i]);
+      } else {
+        HWY_ASSERT_EQ(0, lanes3[i]);
+      }
+    }
 
     // Unaligned store
     StoreU(lo2, d, &lanes2[N / 2]);
