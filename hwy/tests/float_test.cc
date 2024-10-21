@@ -298,7 +298,7 @@ struct TestMaskedReciprocalSquareRoot {
       HWY_ASSERT(lanes);
       Store(MaskedApproximateReciprocalSqrtOrZero(first_three, v), d, lanes.get());
       for (size_t i = 0; i < N; ++i) {
-        T expected_val = i<3 ? (1/std::sqrt(ConvertScalarTo<T>(123.0f))) : 0;
+        T expected_val = i<3 ? ConvertScalarTo<T>(1/std::sqrt(123.0f)) : ConvertScalarTo<T>(0);
         T err = ConvertScalarTo<T>(ConvertScalarTo<float>(lanes[i]) - expected_val);
         if (err < ConvertScalarTo<T>(0)) err = -err;
         if (static_cast<double>(err) >= 4E-4) {
