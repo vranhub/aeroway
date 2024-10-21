@@ -197,6 +197,90 @@ HWY_NOINLINE void TestAllPromoteRoundTo() {
 }
 
 template <typename ToT>
+struct TestMaskedPromoteToOrZero {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D from_d) {
+    static_assert(sizeof(T) < sizeof(ToT), "Input type must be narrower");
+    const Rebind<ToT, D> to_d;
+
+    const size_t N = Lanes(from_d);
+    auto from = AllocateAligned<T>(N);
+    auto expected = AllocateAligned<ToT>(N);
+    HWY_ASSERT(from && expected);
+
+    RandomState rng;
+    for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
+      for (size_t i = 0; i < N; ++i) {
+        const uint64_t bits = rng();
+        CopyBytes<sizeof(T)>(&bits, &from[i]);  // not same size
+        expected[i] = from[i];
+      }
+
+      HWY_ASSERT_VEC_EQ(to_d, expected.get(),
+                        MaskedPromoteToOrZero(MaskTrue(to_d), to_d, Load(from_d, from.get())));
+
+      HWY_ASSERT_VEC_EQ(to_d, Zero(to_d),
+                        MaskedPromoteToOrZero(MaskFalse(to_d), to_d, Load(from_d, from.get())));
+    }
+  }
+};
+
+HWY_NOINLINE void TestAllMaskedPromoteToOrZero() {
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<uint16_t>, 1> to_u16div2;
+  to_u16div2(uint8_t());
+
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<uint32_t>, 2> to_u32div4;
+  to_u32div4(uint8_t());
+
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<uint32_t>, 1> to_u32div2;
+  to_u32div2(uint16_t());
+
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<int16_t>, 1> to_i16div2;
+  to_i16div2(uint8_t());
+  to_i16div2(int8_t());
+
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<int32_t>, 1> to_i32div2;
+  to_i32div2(uint16_t());
+  to_i32div2(int16_t());
+
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<int32_t>, 2> to_i32div4;
+  to_i32div4(uint8_t());
+  to_i32div4(int8_t());
+
+  // Must test f16/bf16 separately because we can only load/store/convert them.
+
+#if HWY_HAVE_INTEGER64
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<uint64_t>, 1> to_u64div2;
+  to_u64div2(uint32_t());
+
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<int64_t>, 1> to_i64div2;
+  to_i64div2(int32_t());
+  to_i64div2(uint32_t());
+
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<uint64_t>, 2> to_u64div4;
+  to_u64div4(uint16_t());
+
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<int64_t>, 2> to_i64div4;
+  to_i64div4(int16_t());
+  to_i64div4(uint16_t());
+
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<uint64_t>, 3> to_u64div8;
+  to_u64div8(uint8_t());
+
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<int64_t>, 3> to_i64div8;
+  to_i64div8(int8_t());
+  to_i64div8(uint8_t());
+#endif
+
+#if HWY_HAVE_FLOAT64
+  const ForPromoteVectors<TestMaskedPromoteToOrZero<double>, 1> to_f64div2;
+  to_f64div2(int32_t());
+  to_f64div2(uint32_t());
+  to_f64div2(float());
+#endif
+}
+
+template <typename ToT>
 struct TestPromoteUpperLowerTo {
   template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D from_d) {
@@ -766,6 +850,154 @@ class TestIntFromFloat {
 
 HWY_NOINLINE void TestAllIntFromFloat() {
   ForFloatTypes(ForPartialVectors<TestIntFromFloat>());
+}
+
+class TestMaskedConvertToOrZeroIntFromFloat {
+  template <typename TF, class DF>
+  static HWY_NOINLINE void TestHuge(TF /*unused*/, const DF df) {
+    using TI = MakeSigned<TF>;
+    const Rebind<TI, DF> di;
+
+    // Huge positive
+    HWY_ASSERT_VEC_EQ(di, Set(di, LimitsMax<TI>()),
+                      MaskedConvertToOrZero(MaskTrue(di), di, Set(df, HighestValue<TF>())));
+    HWY_ASSERT_VEC_EQ(di, Zero(di),
+                      MaskedConvertToOrZero(MaskFalse(di), di, Set(df, HighestValue<TF>())));
+
+    // Huge negative
+    HWY_ASSERT_VEC_EQ(di, Set(di, LimitsMin<TI>()),
+                      MaskedConvertToOrZero(MaskTrue(di), di, Set(df, LowestValue<TF>())));
+    HWY_ASSERT_VEC_EQ(di, Zero(di),
+                      MaskedConvertToOrZero(MaskFalse(di), di, Set(df, LowestValue<TF>())));
+  }
+
+  template <typename TF, class DF>
+  static HWY_NOINLINE void TestPowers(TF /*unused*/, const DF df) {
+    using TI = MakeSigned<TF>;
+    const Rebind<TI, DF> di;
+    constexpr size_t kBits = sizeof(TF) * 8;
+
+    // Powers of two, plus offsets to set some mantissa bits.
+    const int64_t ofs_table[3] = {0LL, 3LL << (kBits / 2), 1LL << (kBits - 15)};
+    for (int sign = 0; sign < 2; ++sign) {
+      for (size_t shift = 0; shift < kBits - 1; ++shift) {
+        for (int64_t ofs : ofs_table) {
+          const int64_t mag = (int64_t{1} << shift) + ofs;
+          const int64_t val = sign ? mag : -mag;
+          const TF val_f = ConvertScalarTo<TF>(val);
+          // Convert expected value to account for loss of precision.
+          HWY_ASSERT_VEC_EQ(
+              di, Set(di, static_cast<TI>(ConvertScalarTo<double>(val_f))),
+              MaskedConvertToOrZero(MaskTrue(di), di, Set(df, val_f)));
+          HWY_ASSERT_VEC_EQ(
+              di, Zero(di),
+              MaskedConvertToOrZero(MaskFalse(di), di, Set(df, val_f)));
+        }
+      }
+    }
+  }
+
+  template <typename TF, class DF>
+  static HWY_NOINLINE void TestRandom(TF /*unused*/, const DF df) {
+    using TI = MakeSigned<TF>;
+    const Rebind<TI, DF> di;
+    const size_t N = Lanes(df);
+
+    // TF does not have enough precision to represent TI.
+    const double min = static_cast<double>(LimitsMin<TI>());
+    const double max = static_cast<double>(LimitsMax<TI>());
+
+    // Also check random values.
+    auto from = AllocateAligned<TF>(N);
+    auto expected = AllocateAligned<TI>(N);
+    HWY_ASSERT(from && expected);
+    RandomState rng;
+    for (size_t rep = 0; rep < AdjustedReps(1000); ++rep) {
+      for (size_t i = 0; i < N; ++i) {
+        do {
+          const uint64_t bits = rng();
+          CopyBytes<sizeof(TF)>(&bits, &from[i]);  // not same size
+        } while (!ScalarIsFinite(from[i]));
+        if (from[i] >= max) {
+          expected[i] = LimitsMax<TI>();
+        } else if (from[i] <= min) {
+          expected[i] = LimitsMin<TI>();
+        } else {
+          expected[i] = static_cast<TI>(from[i]);
+        }
+      }
+
+      HWY_ASSERT_VEC_EQ(di, expected.get(),
+                        MaskedConvertToOrZero(MaskTrue(di), di, Load(df, from.get())));
+      HWY_ASSERT_VEC_EQ(di, Zero(di),
+                        MaskedConvertToOrZero(MaskFalse(di), di, Load(df, from.get())));
+    }
+  }
+
+ public:
+  template <typename TF, class DF>
+  HWY_NOINLINE void operator()(TF tf, const DF df) {
+    using TI = MakeSigned<TF>;
+    const Rebind<TI, DF> di;
+    const size_t N = Lanes(df);
+
+    // Integer positive
+    HWY_ASSERT_VEC_EQ(di, Iota(di, 4), MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, 4.0)));
+
+    // Integer negative
+    HWY_ASSERT_VEC_EQ(di, Iota(di, -static_cast<TI>(N)),
+                      MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, -ConvertScalarTo<TF>(N))));
+
+    // Above positive
+    HWY_ASSERT_VEC_EQ(di, Iota(di, 2), MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, 2.1)));
+
+    // Below positive
+    HWY_ASSERT_VEC_EQ(di, Iota(di, 3), MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, 3.9)));
+
+    const double neg = -static_cast<double>(N + 1);
+    const double eps =
+        ConvertScalarTo<double>(Epsilon<TF>()) * static_cast<double>(N);
+    // Above negative
+    HWY_ASSERT_VEC_EQ(di, Iota(di, -static_cast<TI>(N)),
+                      MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, ConvertScalarTo<TF>(neg + eps))));
+
+    // Below negative
+    HWY_ASSERT_VEC_EQ(di, Iota(di, -static_cast<TI>(N + 1)),
+                      MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, ConvertScalarTo<TF>(neg - eps))));
+
+    TestHuge(tf, df);
+    TestPowers(tf, df);
+    TestRandom(tf, df);
+  }
+};
+
+struct TestMaskedConvertToOrZeroFloatFromInt {
+  template <typename TF, class DF>
+  HWY_NOINLINE void operator()(TF /*unused*/, const DF df) {
+    using TI = MakeSigned<TF>;
+    const RebindToSigned<DF> di;
+    const size_t N = Lanes(df);
+
+    // Integer positive
+    HWY_ASSERT_VEC_EQ(df, Iota(df, 4.0), MaskedConvertToOrZero(MaskTrue(df), df, Iota(di, 4)));
+
+    // Integer negative
+    HWY_ASSERT_VEC_EQ(df, Iota(df, -ConvertScalarTo<TF>(N)),
+                      MaskedConvertToOrZero(MaskTrue(df), df, Iota(di, -static_cast<TI>(N))));
+
+    // Max positive
+    HWY_ASSERT_VEC_EQ(df, Set(df, ConvertScalarTo<TF>(LimitsMax<TI>())),
+                      MaskedConvertToOrZero(MaskTrue(df), df, Set(di, LimitsMax<TI>())));
+
+    // Min negative
+    HWY_ASSERT_VEC_EQ(df, Set(df, ConvertScalarTo<TF>(LimitsMin<TI>())),
+                      MaskedConvertToOrZero(MaskTrue(df), df, Set(di, LimitsMin<TI>())));
+  }
+};
+
+HWY_NOINLINE void TestAllMaskedConvertToOrZero() {
+  ForFloatTypes(ForPartialVectors<TestMaskedConvertToOrZeroIntFromFloat>());
+  ForFloatTypes(ForPartialVectors<TestMaskedConvertToOrZeroFloatFromInt>());
 }
 
 class TestUintFromFloat {
@@ -1501,6 +1733,7 @@ HWY_BEFORE_TEST(HwyConvertTest);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllRebind);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllPromoteTo);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllPromoteRoundTo);
+HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllMaskedPromoteToOrZero);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllPromoteUpperLowerTo);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllPromoteOddEvenTo);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllF16);
@@ -1508,6 +1741,7 @@ HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllF16FromF64);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllBF16);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllConvertU8);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllIntFromFloat);
+HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllMaskedConvertToOrZero);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllUintFromFloat);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllFloatFromInt);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllFloatFromUint);
