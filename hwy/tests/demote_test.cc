@@ -159,6 +159,7 @@ struct TestMaskedDemoteToOrZeroInt {
       }
       const auto in = Load(from_d, from.get());
       HWY_ASSERT_VEC_EQ(to_d, expected.get(), MaskedDemoteToOrZero(MaskTrue(to_d), to_d, in));
+      HWY_ASSERT_VEC_EQ(to_d, Zero(to_d), MaskedDemoteToOrZero(MaskFalse(to_d), to_d, in));
     }
 
     for (size_t rep = 0; rep < AdjustedReps(1000); ++rep) {
@@ -175,6 +176,7 @@ struct TestMaskedDemoteToOrZeroInt {
 
       const auto in = Load(from_d, from.get());
       HWY_ASSERT_VEC_EQ(to_d, expected.get(), MaskedDemoteToOrZero(MaskTrue(to_d), to_d, in));
+      HWY_ASSERT_VEC_EQ(to_d, Zero(to_d), MaskedDemoteToOrZero(MaskFalse(to_d), to_d, in));
     }
   }
 };

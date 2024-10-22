@@ -1952,6 +1952,9 @@ All functions except `Stream` are defined in cache_control.h.
     `DemoteToNearestInt(d, v)` is more efficient on some targets, including x86
     and RVV.
 
+*   <code>Vec&lt;D&gt; **MaskedConvertToOrZero**(M m, D, V v)</code>: returns `v[i]`
+    converted to `D` where m is active and returns zero otherwise.
+
 #### Single vector demotion
 
 These functions demote a full vector (or parts thereof) into a vector of half
@@ -2000,6 +2003,9 @@ obtain the `D` that describes the return type.
     <code>Vec&lt;D&gt; **DemoteFloorTo**(D, V v)</code>: Demotes a floating
     point number to half-sized integral type with floor rounding.
 
+*   <code>Vec&lt;D&gt; **MaskedDemoteToOrZero**(M m, D, V v)</code>: returns `v[i]`
+    demoted to `D` where m is active and returns zero otherwise.
+
 #### Single vector promotion
 
 These functions promote a half vector to a full vector. To obtain halves, use
@@ -2043,6 +2049,9 @@ These functions promote a half vector to a full vector. To obtain halves, use
     `part[i]` towards the nearest integer, with ties to even, and converts the
     rounded value to a signed or unsigned integer. Returns an
     implementation-defined value if the input exceeds the destination range.
+
+*   <code>Vec&lt;D&gt; **MaskedPromoteToOrZero**(M m, D, V v)</code>: returns `v[i]`
+    widened to `D` where m is active and returns zero otherwise.
 
 The following may be more convenient or efficient than also calling `LowerHalf`
 / `UpperHalf`:
