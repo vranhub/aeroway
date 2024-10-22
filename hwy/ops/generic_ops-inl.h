@@ -4845,6 +4845,12 @@ HWY_API VFromD<D> MaskedPromoteToOrZero(M m, D d, V v) {
   return IfThenElseZero(m, PromoteTo(d, v));
 }
 
+// ------------------------------ MaskedDemoteToOrZero
+template <class D, class V, class M>
+HWY_API VFromD<D> MaskedDemoteToOrZero(M m, D d, V v) {
+  return IfThenElseZero(m, DemoteTo(d, v));
+}
+
 // ------------------------------ MaskedConvertToOrZero
 template <class D, class V, class M>
 HWY_API VFromD<D> MaskedConvertToOrZero(M m, D d, V v) {
