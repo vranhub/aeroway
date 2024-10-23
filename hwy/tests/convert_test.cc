@@ -943,16 +943,20 @@ class TestMaskedConvertToOrZeroIntFromFloat {
 
     // Integer positive
     HWY_ASSERT_VEC_EQ(di, Iota(di, 4), MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, 4.0)));
+    HWY_ASSERT_VEC_EQ(di, Zero(di), MaskedConvertToOrZero(MaskFalse(di), di, Iota(df, 4.0)));
 
     // Integer negative
     HWY_ASSERT_VEC_EQ(di, Iota(di, -static_cast<TI>(N)),
                       MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, -ConvertScalarTo<TF>(N))));
+    HWY_ASSERT_VEC_EQ(di, Zero(di), MaskedConvertToOrZero(MaskFalse(di), di, Iota(df, -ConvertScalarTo<TF>(N))));
 
     // Above positive
     HWY_ASSERT_VEC_EQ(di, Iota(di, 2), MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, 2.1)));
+    HWY_ASSERT_VEC_EQ(di, Zero(di), MaskedConvertToOrZero(MaskFalse(di), di, Iota(df, 2.1)));
 
     // Below positive
     HWY_ASSERT_VEC_EQ(di, Iota(di, 3), MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, 3.9)));
+    HWY_ASSERT_VEC_EQ(di, Zero(di), MaskedConvertToOrZero(MaskFalse(di), di, Iota(df, 3.9)));
 
     const double neg = -static_cast<double>(N + 1);
     const double eps =
@@ -960,10 +964,12 @@ class TestMaskedConvertToOrZeroIntFromFloat {
     // Above negative
     HWY_ASSERT_VEC_EQ(di, Iota(di, -static_cast<TI>(N)),
                       MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, ConvertScalarTo<TF>(neg + eps))));
+    HWY_ASSERT_VEC_EQ(di, Zero(di), MaskedConvertToOrZero(MaskFalse(di), di, Iota(df, ConvertScalarTo<TF>(neg + eps))));
 
     // Below negative
     HWY_ASSERT_VEC_EQ(di, Iota(di, -static_cast<TI>(N + 1)),
                       MaskedConvertToOrZero(MaskTrue(di), di, Iota(df, ConvertScalarTo<TF>(neg - eps))));
+    HWY_ASSERT_VEC_EQ(di, Zero(di), MaskedConvertToOrZero(MaskFalse(di), di, Iota(df, ConvertScalarTo<TF>(neg - eps))));
 
     TestHuge(tf, df);
     TestPowers(tf, df);
@@ -980,18 +986,22 @@ struct TestMaskedConvertToOrZeroFloatFromInt {
 
     // Integer positive
     HWY_ASSERT_VEC_EQ(df, Iota(df, 4.0), MaskedConvertToOrZero(MaskTrue(df), df, Iota(di, 4)));
+    HWY_ASSERT_VEC_EQ(df, Zero(df), MaskedConvertToOrZero(MaskFalse(df), df, Iota(di, 4)));
 
     // Integer negative
     HWY_ASSERT_VEC_EQ(df, Iota(df, -ConvertScalarTo<TF>(N)),
                       MaskedConvertToOrZero(MaskTrue(df), df, Iota(di, -static_cast<TI>(N))));
+    HWY_ASSERT_VEC_EQ(df, Zero(df), MaskedConvertToOrZero(MaskFalse(df), df, Iota(di, -static_cast<TI>(N))));
 
     // Max positive
     HWY_ASSERT_VEC_EQ(df, Set(df, ConvertScalarTo<TF>(LimitsMax<TI>())),
                       MaskedConvertToOrZero(MaskTrue(df), df, Set(di, LimitsMax<TI>())));
+    HWY_ASSERT_VEC_EQ(df, Zero(df), MaskedConvertToOrZero(MaskFalse(df), df, Set(di, LimitsMax<TI>())));
 
     // Min negative
     HWY_ASSERT_VEC_EQ(df, Set(df, ConvertScalarTo<TF>(LimitsMin<TI>())),
                       MaskedConvertToOrZero(MaskTrue(df), df, Set(di, LimitsMin<TI>())));
+    HWY_ASSERT_VEC_EQ(df, Zero(df), MaskedConvertToOrZero(MaskFalse(df), df, Set(di, LimitsMin<TI>())));
   }
 };
 
