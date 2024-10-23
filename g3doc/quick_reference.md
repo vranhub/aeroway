@@ -564,11 +564,13 @@ from left to right, of the arguments passed to `Create{2-4}`.
 
 *   <code>V **AbsDiff**(V a, V b)</code>: returns `|a[i] - b[i]|` in each lane.
 
-*   <code>V **PairwiseAdd**(D d, V a, V b)</code>: Add consecutive pairs of vectors.
-    Return the result of a in the lower half and b in the upper half, such that `r[i] = a[2*i+0] + a[2*i+1]` for `i< N/2` and `r[i] = b[2*i+0] + b[2*i+1]` for `N/2 <= i < N`.
+*   <code>V **PairwiseAdd**(D d, V a, V b)</code>: Add consecutive pairs of elements.
+    Return the results of a and b interleaved, such that `r[i] = a[i] + a[i+1]` for
+    even lanes and `r[i] = b[i-1] + b[i]` for odd lanes.
 
-*   <code>V **PairwiseSub**(D d, V a, V b)</code>: Take the difference of consecutive pairs of vectors.
-    Return the result of a in the lower half and b in the upper half, such that `r[i] = a[2*i+1] - a[2*i+0]` for `i< N/2` and `r[i] = b[2*i+1] - b[2*i+0]` for `N/2 <= i < N`.
+*   <code>V **PairwiseSub**(D d, V a, V b)</code>: Subtract consecutive pairs of elements.
+    Return the results of a and b interleaved, such that `r[i] = a[i+1] - a[i]` for
+    even lanes and `r[i] = b[i] - b[i-1]` for odd lanes.
 
 *   `V`: `{i,u}{8,16,32},f{16,32}`, `VW`: `Vec<RepartitionToWide<DFromV<V>>>` \
     <code>VW **SumsOf2**(V v)</code>

@@ -283,18 +283,16 @@ struct TestPairwiseAdd {
     auto expected = AllocateAligned<T>(N);
     HWY_ASSERT(expected);
 
-    for (size_t i = 0; i < N/2; ++i) {
-      size_t j = 2 * i;
+    for (size_t i = 0; i < N; i+=2) {
 
-      // Results of a are stored in the lower half, results of b are stored in
-      // upper half
-      even_val_a = ConvertScalarTo<T>(j + 1);  // a[j]
-      odd_val_a = ConvertScalarTo<T>(j + 2);  // a[j+1]
-      even_val_b = ConvertScalarTo<T>(j + 2);  // b[j]
-      odd_val_b = ConvertScalarTo<T>(j + 3);  // b[j+1]
+      // Results of a and b are interleaved
+      even_val_a = ConvertScalarTo<T>(i + 1);   // a[i]
+      odd_val_a = ConvertScalarTo<T>(i + 1 + 1);// a[i+1]
+      even_val_b = ConvertScalarTo<T>(i + 2);   // b[i]
+      odd_val_b = ConvertScalarTo<T>(i + 2 + 1);// b[i+1]
 
       expected[i] = even_val_a + odd_val_a;
-      expected[i + N/2] = even_val_b + odd_val_b;
+      expected[i+1] = even_val_b + odd_val_b;
     }
 
     HWY_ASSERT_VEC_EQ(d, expected.get(), PairwiseAdd(d, a, b));
@@ -309,28 +307,35 @@ struct TestPairwiseAdd {
 struct TestPairwiseSub {
   template <typename T, class D, HWY_IF_LANES_GT_D(D, 1)>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
-    const Vec<D> a = Iota(d, 1);
-    const Vec<D> b = Iota(d, 2);
-
     const size_t N = Lanes(d);
     if (N < 2) { return; }
+
+    auto a_lanes = AllocateAligned<T>(N);
+    auto b_lanes = AllocateAligned<T>(N);
+    HWY_ASSERT(a_lanes && b_lanes);
+
     T even_val_a, odd_val_a, even_val_b, odd_val_b;
     auto expected = AllocateAligned<T>(N);
     HWY_ASSERT(expected);
 
-    for (size_t i = 0; i < N/2; ++i) {
-      size_t j = 2 * i;
+    for (size_t i = 0; i < N; i+=2) {
+      // Results of a and are interleaved
+      even_val_a = ConvertScalarTo<T>(i);     // a[i]
+      odd_val_a = ConvertScalarTo<T>(i*i);    // a[i+1]
+      even_val_b = ConvertScalarTo<T>(i);     // b[i]
+      odd_val_b = ConvertScalarTo<T>(i*i + 2);// b[i+1]
 
-      // Results of a are stored in the lower half, results of b are stored in
-      // upper half
-      even_val_a = ConvertScalarTo<T>(j + 1);  // a[j]
-      odd_val_a = ConvertScalarTo<T>(j + 2);  // a[j+1]
-      even_val_b = ConvertScalarTo<T>(j + 2);  // b[j]
-      odd_val_b = ConvertScalarTo<T>(j + 3);  // b[j+1]
+      a_lanes[i] = even_val_a;  // a[i]
+      a_lanes[i+1] = odd_val_a; // a[i+1]
+      b_lanes[i] = even_val_b;  // b[i]
+      b_lanes[i+1] = odd_val_b; // b[i+1]
 
       expected[i] = odd_val_a - even_val_a;
-      expected[i + N/2] = odd_val_b - even_val_b;
+      expected[i+1] = odd_val_b - even_val_b;
     }
+
+    const auto a = Load(d, a_lanes.get());
+    const auto b = Load(d, b_lanes.get());
 
     HWY_ASSERT_VEC_EQ(d, expected.get(), PairwiseSub(d, a, b));
   }
