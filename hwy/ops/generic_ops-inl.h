@@ -2272,12 +2272,12 @@ HWY_API void StoreInterleaved4(VFromD<D> part0, VFromD<D> part1,
 
 template <class D, class V = VFromD<D>(), HWY_IF_LANES_GT_D(D, 1)>
 HWY_API V PairwiseAdd(D d, V a, V b) {
-  return Add(ConcatEven(d, b, a), ConcatOdd(d, b, a));
+  return Add(InterleaveEven(d, a, b), InterleaveOdd(d, a, b));
 }
 
 template <class D, class V = VFromD<D>(), HWY_IF_LANES_GT_D(D, 1)>
 HWY_API V PairwiseSub(D d, V a, V b) {
-  return Sub(ConcatOdd(d, b, a), ConcatEven(d, b, a));
+  return Sub(InterleaveOdd(d, a, b), InterleaveEven(d, a, b));
 }
 
 #endif
