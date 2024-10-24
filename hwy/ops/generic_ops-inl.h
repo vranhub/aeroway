@@ -3512,6 +3512,19 @@ HWY_API VFromD<D> DemoteTo(D df16, VFromD<Rebind<float, D>> v) {
 
 #endif  // HWY_NATIVE_F16C
 
+// ------------------------------ PromoteTo F16->I
+#if HWY_HAVE_FLOAT16 || HWY_IDE
+template <class D, HWY_IF_NOT_FLOAT_D(D), HWY_IF_T_SIZE_D(D, sizeof(float))>
+HWY_API VFromD<D> PromoteTo(D d, VFromD<Rebind<float16_t, D>> v) {
+  return ConvertTo(d, PromoteTo(Rebind<float, D>(), v));
+}
+
+template <class D, HWY_IF_NOT_FLOAT_D(D), HWY_IF_T_SIZE_GT_D(D, sizeof(float))>
+HWY_API VFromD<D> PromoteTo(D d, VFromD<Rebind<float16_t, D>> v) {
+  return PromoteTo(d, PromoteTo(Rebind<float, D>(), v));
+}
+#endif
+
 // ------------------------------ F64->F16 DemoteTo
 #if (defined(HWY_NATIVE_DEMOTE_F64_TO_F16) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_DEMOTE_F64_TO_F16
@@ -3808,6 +3821,24 @@ HWY_API VFromD<D> PromoteInRangeOddTo(D d, V v) {
 #endif
 }
 #endif  // HWY_TARGET != HWY_SCALAR
+
+// ------------------------------ PromoteCeilTo
+template <class DTo, class V, HWY_IF_FLOAT_V(V)>
+HWY_API Vec<DTo> PromoteCeilTo(DTo d, V v) {
+  return PromoteTo(d, Ceil(v));
+}
+
+// ------------------------------ PromoteFloorTo
+template <class DTo, class V, HWY_IF_FLOAT_V(V)>
+HWY_API Vec<DTo> PromoteFloorTo(DTo d, V v) {
+  return PromoteTo(d, Floor(v));
+}
+
+// ------------------------------ PromoteToNearestInt
+template <class DTo, class V, HWY_IF_FLOAT_V(V)>
+HWY_API Vec<DTo> PromoteToNearestInt(DTo d, V v) {
+  return PromoteTo(d, Round(v));
+}
 
 // ------------------------------ SumsOf2
 

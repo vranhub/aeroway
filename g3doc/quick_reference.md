@@ -2026,6 +2026,24 @@ These functions promote a half vector to a full vector. To obtain halves, use
     integer. Returns an implementation-defined value if the input exceeds the
     destination range.
 
+*   `V`: `f`, `D`:`{u,i,f}`\
+    <code>Vec&lt;D&gt; **PromoteCeilTo**(D, V part)</code>: rounds `part[i]`
+    up and converts the rounded value to a signed or unsigned integer.
+    Returns an implementation-defined value if the input exceeds the
+    destination range.
+
+*   `V`: `f`, `D`:`{u,i,f}`\
+    <code>Vec&lt;D&gt; **PromoteFloorTo**(D, V part)</code>: rounds `part[i]`
+    down and converts the rounded value to a signed or unsigned integer.
+    Returns an implementation-defined value if the input exceeds the
+    destination range.
+
+*   `V`: `f`, `D`:`{u,i,f}`\
+    <code>Vec&lt;D&gt; **PromoteToNearestInt **(D, V part)</code>: rounds
+    `part[i]` towards the nearest integer, with ties to even, and converts the
+    rounded value to a signed or unsigned integer. Returns an
+    implementation-defined value if the input exceeds the destination range.
+
 The following may be more convenient or efficient than also calling `LowerHalf`
 / `UpperHalf`:
 
