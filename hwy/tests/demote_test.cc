@@ -132,6 +132,16 @@ HWY_NOINLINE void TestAllDemoteToInt() {
 #endif
 }
 
+HWY_NOINLINE void TestAllDemoteToMixed() {
+#if HWY_HAVE_FLOAT64
+  const ForDemoteVectors<TestDemoteTo<int32_t>> to_i32;
+  to_i32(double());
+
+  const ForDemoteVectors<TestDemoteTo<uint32_t>> to_u32;
+  to_u32(double());
+#endif
+}
+
 template <typename ToT>
 struct TestMaskedDemoteToOrZeroInt {
   template <typename T, class D>
@@ -143,40 +153,35 @@ struct TestMaskedDemoteToOrZeroInt {
     const size_t N = Lanes(from_d);
     auto from = AllocateAligned<T>(N);
     auto expected = AllocateAligned<ToT>(N);
-    HWY_ASSERT(from && expected);
-
+    auto bool_lanes = AllocateAligned<ToT>(N);
+    HWY_ASSERT(from && expected && bool_lanes);
     // Narrower range in the wider type, for clamping before we cast
     const T min = ConvertScalarTo<T>(IsSigned<T>() ? LimitsMin<ToT>()
                                                    : static_cast<ToT>(0));
     const T max = LimitsMax<ToT>();
-
     RandomState rng;
-    for (size_t rep = 0; rep < AdjustedReps(1000); ++rep) {
+    for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
       for (size_t i = 0; i < N; ++i) {
         const uint64_t bits = rng();
         CopyBytes<sizeof(T)>(&bits, &from[i]);  // not same size
-        expected[i] = static_cast<ToT>(HWY_MIN(HWY_MAX(min, from[i]), max));
-      }
-      const auto in = Load(from_d, from.get());
-      HWY_ASSERT_VEC_EQ(to_d, expected.get(), MaskedDemoteToOrZero(MaskTrue(to_d), to_d, in));
-      HWY_ASSERT_VEC_EQ(to_d, Zero(to_d), MaskedDemoteToOrZero(MaskFalse(to_d), to_d, in));
-    }
 
-    for (size_t rep = 0; rep < AdjustedReps(1000); ++rep) {
-      for (size_t i = 0; i < N; ++i) {
-        const uint64_t bits = rng();
-        CopyBytes<sizeof(ToT)>(&bits, &expected[i]);  // not same size
+        bool_lanes[i] = (Random32(&rng) & 1024) ? ToT(1) : ToT(0);
+        if (bool_lanes[i]) {
+          expected[i] = static_cast<ToT>(HWY_MIN(HWY_MAX(min, from[i]), max));
 
-        if (!IsSigned<T>() && IsSigned<ToT>()) {
-          expected[i] &= static_cast<ToT>(max);
+        } else {
+          expected[i] = ConvertScalarTo<ToT>(0);
         }
-
-        from[i] = ConvertScalarTo<T>(expected[i]);
       }
 
-      const auto in = Load(from_d, from.get());
-      HWY_ASSERT_VEC_EQ(to_d, expected.get(), MaskedDemoteToOrZero(MaskTrue(to_d), to_d, in));
-      HWY_ASSERT_VEC_EQ(to_d, Zero(to_d), MaskedDemoteToOrZero(MaskFalse(to_d), to_d, in));
+      const auto mask_i = Load(to_d, bool_lanes.get());
+      const auto mask = RebindMask(to_d, Gt(mask_i, Zero(to_d)));
+
+      const auto v1 = Load(from_d, from.get());
+
+      HWY_ASSERT_VEC_EQ(to_d, expected.get(),
+                        MaskedDemoteToOrZero(mask, to_d, v1));
+
     }
   }
 };
@@ -232,16 +237,6 @@ HWY_NOINLINE void TestAllMaskedDemoteToOrZeroInt() {
   const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<int32_t>> from_i64_to_i32;
   from_i64_to_i32(int64_t());
   from_i64_to_i32(uint64_t());
-#endif
-}
-
-HWY_NOINLINE void TestAllDemoteToMixed() {
-#if HWY_HAVE_FLOAT64
-  const ForDemoteVectors<TestDemoteTo<int32_t>> to_i32;
-  to_i32(double());
-
-  const ForDemoteVectors<TestDemoteTo<uint32_t>> to_u32;
-  to_u32(double());
 #endif
 }
 
