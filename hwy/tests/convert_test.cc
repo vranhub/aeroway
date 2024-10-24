@@ -209,27 +209,14 @@ struct TestMaskedPromoteToOrZero {
     auto bool_lanes = AllocateAligned<ToT>(N);
     HWY_ASSERT(from && expected && bool_lanes);
 
-    RandomState rng;
     for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
-      for (size_t i = 0; i < N; ++i) {
-        const int64_t bits = rng();
-        CopyBytes<sizeof(ToT)>(&bits, &from[i]);  // not same size
+      const auto v_from = Set(from_d, ConvertScalarTo<T>(1));
+      const auto v_to = Set(to_d, ConvertScalarTo<ToT>(1));
+      const auto first_n = FirstN(to_d, (1 + static_cast<size_t>(std::rand()) % N));
 
-        bool_lanes[i] = (Random32(&rng) & 1024) ? ToT(1) : ToT(0);
-        if (bool_lanes[i]) {
-          expected[i] = from[i];
-        } else {
-          expected[i] = ConvertScalarTo<ToT>(0);
-        }
-      }
-
-      const auto mask_i = Load(to_d, bool_lanes.get());
-      const auto mask = RebindMask(to_d, Gt(mask_i, Zero(to_d)));
-
-      const auto v1 = Load(from_d, from.get());
-
-      HWY_ASSERT_VEC_EQ(to_d, expected.get(),
-                        MaskedPromoteToOrZero(mask, to_d, v1));
+      const auto expected = IfThenElseZero(first_n, v_to);
+      HWY_ASSERT_VEC_EQ(to_d, expected,
+                        MaskedPromoteToOrZero(first_n, to_d, v_from));
 
     }
   }
