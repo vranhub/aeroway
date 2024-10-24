@@ -146,6 +146,57 @@ HWY_NOINLINE void TestAllPromoteTo() {
 }
 
 template <typename ToT>
+struct TestPromoteRoundTo {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D from_d) {
+    static_assert(sizeof(T) < sizeof(ToT), "Input type must be narrower");
+    const Rebind<ToT, D> to_d;
+
+    const size_t N = Lanes(from_d);
+    auto from = AllocateAligned<T>(N);
+    auto expected_ceil = AllocateAligned<ToT>(N);
+    auto expected_floor = AllocateAligned<ToT>(N);
+    auto expected_nearest_int = AllocateAligned<ToT>(N);
+    HWY_ASSERT(from && expected_ceil && expected_floor && expected_nearest_int);
+
+    RandomState rng;
+    for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
+      for (size_t i = 0; i < N; ++i) {
+        const uint64_t bits = rng();
+        CopyBytes<sizeof(T)>(&bits, &from[i]);  // not same size
+        expected_ceil[i] = ConvertScalarTo<ToT>(std::ceil(static_cast<float>(from[i])));
+        expected_floor[i] = ConvertScalarTo<ToT>(std::floor(static_cast<float>(from[i])));
+        expected_nearest_int[i] = ConvertScalarTo<ToT>(std::nearbyint(static_cast<float>(from[i])));
+      }
+
+      auto input = Load(from_d, from.get());
+      auto output_ceil = PromoteCeilTo(to_d, input);
+      auto output_floor = PromoteFloorTo(to_d, input);
+      auto output_nearest_int = PromoteToNearestInt(to_d, input);
+
+      HWY_ASSERT_VEC_EQ(to_d, expected_ceil.get(), output_ceil);
+      HWY_ASSERT_VEC_EQ(to_d, expected_floor.get(), output_floor);
+      HWY_ASSERT_VEC_EQ(to_d, expected_nearest_int.get(), output_nearest_int);
+    }
+  }
+};
+
+HWY_NOINLINE void TestAllPromoteRoundTo() {
+#if HWY_HAVE_FLOAT16
+  const ForPromoteVectors<TestPromoteRoundTo<int32_t>, 1> to_i32div2;
+  to_i32div2(hwy::float16_t());
+
+  const ForPromoteVectors<TestPromoteRoundTo<float>, 1> to_f32div2;
+  to_f32div2(hwy::float16_t());
+#endif // HWY_HAVE_FLOAT16
+
+#if HWY_HAVE_FLOAT64
+  const ForPromoteVectors<TestPromoteRoundTo<double>, 1> to_f64div2;
+  to_f64div2(float());
+#endif  // HWY_HAVE_FLOAT64
+}
+
+template <typename ToT>
 struct TestPromoteUpperLowerTo {
   template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D from_d) {
@@ -1449,6 +1500,7 @@ namespace hwy {
 HWY_BEFORE_TEST(HwyConvertTest);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllRebind);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllPromoteTo);
+HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllPromoteRoundTo);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllPromoteUpperLowerTo);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllPromoteOddEvenTo);
 HWY_EXPORT_AND_TEST_P(HwyConvertTest, TestAllF16);
