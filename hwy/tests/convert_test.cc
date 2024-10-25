@@ -849,7 +849,7 @@ HWY_NOINLINE void TestAllIntFromFloat() {
   ForFloatTypes(ForPartialVectors<TestIntFromFloat>());
 }
 
-struct TestMaskedConvertToOrZeroFloatFromInt {
+struct TestMaskedFloatFromInt {
   template <typename TF, class DF>
   HWY_NOINLINE void operator()(TF /*unused*/, const DF df) {
     using TI = MakeSigned<TF>;
@@ -880,13 +880,12 @@ struct TestMaskedConvertToOrZeroFloatFromInt {
     const auto v1 = Load(di, from.get());
     // Integer positive
     HWY_ASSERT_VEC_EQ(df, expected.get(), MaskedConvertToOrZero(mask, df,  v1));
-    HWY_ASSERT_VEC_EQ(df, expected.get(), MaskedConvertToOrZero(mask, df, v1));
 
   }
 };
 
 HWY_NOINLINE void TestAllMaskedConvertToOrZero() {
-  ForFloatTypes(ForPartialVectors<TestMaskedConvertToOrZeroFloatFromInt>());
+  ForFloatTypes(ForPartialVectors<TestMaskedFloatFromInt>());
 }
 
 class TestUintFromFloat {
