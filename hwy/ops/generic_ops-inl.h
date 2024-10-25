@@ -7828,6 +7828,56 @@ HWY_API V BitShuffle(V v, VI idx) {
 
 #endif  // HWY_NATIVE_BITSHUFFLE
 
+// ------------------------------ MultiShift (Rol)
+#if (defined(HWY_NATIVE_MULTISHIFT) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MULTISHIFT
+#undef HWY_NATIVE_MULTISHIFT
+#else
+#define HWY_NATIVE_MULTISHIFT
+#endif
+
+template <class V, class VI, HWY_IF_UI64(TFromV<V>), HWY_IF_UI8(TFromV<VI>)>
+HWY_API V MultiShift(V v, VI idx) {
+  const DFromV<V> d64;
+  const Repartition<uint8_t, decltype(d64)> du8;
+  const Repartition<uint16_t, decltype(d64)> du16;
+  const auto k7 = Set(du8, uint8_t{0x07});
+  const auto k63 = Set(du8, uint8_t{0x3F});
+
+  const auto masked_idx = And(k63, BitCast(du8, idx));
+  const auto byte_idx = ShiftRight<3>(masked_idx);
+  const auto idx_shift = And(k7, masked_idx);
+
+  // Calculate even lanes
+  const auto even_src = DupEven(v);
+  // Expand indexes to pull out 16 bit segments of idx and idx + 1
+  const auto even_idx = InterleaveLower(byte_idx, Add(byte_idx, Set(du8, uint8_t{1})));
+  // TableLookupBytes indexes select from within a 16 byte block
+  const auto even_segments = TableLookupBytes(even_src, even_idx);
+  // Extract unaligned bytes from 16 bit segments
+  const auto even_idx_shift = ZipLower(idx_shift, Zero(du8));
+  const auto extracted_even_bytes = Shr(BitCast(du16, even_segments), even_idx_shift);
+
+  // Calculate odd lanes
+  const auto odd_src = DupOdd(v);
+  // Expand indexes to pull out 16 bit segments of idx and idx + 1
+  const auto odd_idx = InterleaveUpper(du8, byte_idx, Add(byte_idx, Set(du8, uint8_t{1})));
+  // TableLookupBytes indexes select from within a 16 byte block
+  const auto odd_segments = TableLookupBytes(odd_src, odd_idx);
+  // Extract unaligned bytes from 16 bit segments
+  const auto odd_idx_shift = ZipUpper(du16, idx_shift, Zero(du8));
+  const auto extracted_odd_bytes = Shr(BitCast(du16, odd_segments), odd_idx_shift);
+
+  // Extract the even bytes of each 128 bit block and pack into lower 64 bits
+  const auto extract_mask = Dup128VecFromValues(du8, 0, 2, 4, 6, 8, 10, 12, 14, 0, 0, 0, 0, 0, 0, 0, 0);
+  const auto even_lanes = BitCast(d64, TableLookupBytes(extracted_even_bytes, extract_mask));
+  const auto odd_lanes = BitCast(d64, TableLookupBytes(extracted_odd_bytes, extract_mask));
+  // Interleave at 64 bit level
+  return InterleaveLower(even_lanes, odd_lanes);
+}
+
+#endif
+
 // ------------------------------ AllOnes/AllZeros
 #if (defined(HWY_NATIVE_ALLONES) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_ALLONES
