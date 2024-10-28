@@ -690,6 +690,10 @@ struct TestMaskedComparision {
     HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompEq(mask_true, v3, v2));
     HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompEq(mask_true, v2, v2));
     HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompEq(mask_true, v2, v2b));
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompNe(mask_true, v2, v3));
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompNe(mask_true, v3, v2));
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompNe(mask_true, v2, v2));
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompNe(mask_true, v2, v2b));
 
     HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompLt(mask_true, v2, v0));
     HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompGt(mask_true, v0, v2));
@@ -702,6 +706,18 @@ struct TestMaskedComparision {
     HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompLt(mask_true, v0, v2));
     HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompLt(mask_true, v2, v0));
     HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompGt(mask_true, v0, v2));
+
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompLe(mask_true, v2, v0));
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompGe(mask_true, v0, v2));
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompLe(mask_true, v0, v0));
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompGe(mask_true, v0, v0));
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompLe(mask_true, v2, v2));
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompGe(mask_true, v2, v2));
+
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompGe(mask_true, v2, v0));
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedCompLe(mask_true, v0, v2));
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompLe(mask_true, v2, v0));
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompGe(mask_true, v0, v2));
 
     auto bool_lanes = AllocateAligned<T>(N);
     HWY_ASSERT(bool_lanes);
@@ -718,6 +734,10 @@ struct TestMaskedComparision {
       HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompEq(mask, v3, v2));
       HWY_ASSERT_MASK_EQ(d, mask, MaskedCompEq(mask, v2, v2));
       HWY_ASSERT_MASK_EQ(d, mask, MaskedCompEq(mask, v2, v2b));
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedCompNe(mask, v2, v3));
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedCompNe(mask, v3, v2));
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompNe(mask, v2, v2));
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompNe(mask, v2, v2b));
 
       HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompLt(mask, v2, v0));
       HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompGt(mask, v0, v2));
@@ -730,6 +750,18 @@ struct TestMaskedComparision {
       HWY_ASSERT_MASK_EQ(d, mask, MaskedCompLt(mask, v0, v2));
       HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompLt(mask, v2, v0));
       HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompGt(mask, v0, v2));
+
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompLe(mask, v2, v0));
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompGe(mask, v0, v2));
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedCompLe(mask, v0, v0));
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedCompGe(mask, v0, v0));
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedCompLe(mask, v2, v2));
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedCompGe(mask, v2, v2));
+
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedCompGe(mask, v2, v0));
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedCompLe(mask, v0, v2));
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompLe(mask, v2, v0));
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedCompGe(mask, v0, v2));
     }
   }
 };
