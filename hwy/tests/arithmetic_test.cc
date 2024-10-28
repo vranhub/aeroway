@@ -271,6 +271,16 @@ struct TestNegOverflow {
   }
 };
 
+HWY_NOINLINE void TestAllNeg() {
+  ForFloatTypes(ForPartialVectors<TestFloatNeg>());
+  // Always supported, even if !HWY_HAVE_FLOAT16.
+  ForPartialVectors<TestFloatNeg>()(float16_t());
+
+  ForSignedTypes(ForPartialVectors<TestIntegerNeg>());
+
+  ForSignedTypes(ForPartialVectors<TestNegOverflow>());
+}
+
 struct TestPairwiseAdd {
   template <typename T, class D, HWY_IF_LANES_GT_D(D, 1)>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
@@ -387,16 +397,6 @@ HWY_NOINLINE void TestAllPairwise() {
   ForAllTypes(ForPartialVectors<TestPairwiseAdd>());
   ForAllTypes(ForPartialVectors<TestPairwiseSub>());
   ForAllTypes(ForGEVectors<128, TestPairWiseAdd128>());
-}
-
-HWY_NOINLINE void TestAllNeg() {
-  ForFloatTypes(ForPartialVectors<TestFloatNeg>());
-  // Always supported, even if !HWY_HAVE_FLOAT16.
-  ForPartialVectors<TestFloatNeg>()(float16_t());
-
-  ForSignedTypes(ForPartialVectors<TestIntegerNeg>());
-
-  ForSignedTypes(ForPartialVectors<TestNegOverflow>());
 }
 
 struct TestIntegerAbsDiff {
