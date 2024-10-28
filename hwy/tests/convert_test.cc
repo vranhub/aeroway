@@ -920,8 +920,45 @@ struct TestMaskedFloatFromInt {
   }
 };
 
+struct TestMaskedFloatFromUint {
+  template <typename TF, class DF>
+  HWY_NOINLINE void operator()(TF /*unused*/, const DF df) {
+    using TI = MakeUnsigned<TF>;
+    const RebindToUnsigned<DF> di;
+    const size_t N = Lanes(df);
+    auto from = AllocateAligned<TI>(N);
+    auto expected = AllocateAligned<TF>(N);
+    auto bool_lanes = AllocateAligned<TF>(N);
+    HWY_ASSERT(from && expected && bool_lanes);
+
+    RandomState rng;
+    for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
+      for (size_t i = 0; i < N; ++i) {
+        const uint64_t bits = rng();
+        CopyBytes<sizeof(TF)>(&bits, &from[i]);  // not same size
+
+        bool_lanes[i] = (Random32(&rng) & 1024) ? TF(1) : TF(0);
+        if (bool_lanes[i]) {
+          expected[i] = ConvertScalarTo<TF>(from[i]);
+        } else {
+          expected[i] = ConvertScalarTo<TF>(0);
+        }
+      }
+    }
+    const auto mask_i = Load(df, bool_lanes.get());
+    const auto mask = RebindMask(df, Gt(mask_i, Zero(df)));
+
+    const auto v1 = Load(di, from.get());
+
+    // Float from int
+    HWY_ASSERT_VEC_EQ(df, expected.get(), MaskedConvertToOrZero(mask, df,  v1));
+
+  }
+};
+
 HWY_NOINLINE void TestAllMaskedConvertToOrZero() {
   ForFloatTypes(ForPartialVectors<TestMaskedFloatFromInt>());
+  ForFloatTypes(ForPartialVectors<TestMaskedFloatFromUint>());
   ForFloatTypes(ForPartialVectors<TestMaskedIntFromFloat>());
 }
 
