@@ -572,6 +572,16 @@ from left to right, of the arguments passed to `Create{2-4}`.
     Return the results of a and b interleaved, such that `r[i] = a[i+1] - a[i]` for
     even lanes and `r[i] = b[i] - b[i-1]` for odd lanes.
 
+*   <code>V **PairwiseAdd128**(D d, V a, V b)</code>: Add consecutive pairs of
+*   elements in a and b, and pack results in 128 bit blocks, such that
+    `r[i] = a[i] + a[i+1]` for 64 bits, followed by `b[i] + b[i+1]` for next 64
+    bits and repeated.
+
+*   <code>V **PairwiseSub128**(D d, V a, V b)</code>: Subtract consecutive pairs
+    of elements in a and b, and pack results in 128 bit blocks, such that
+    `r[i] = a[i] + a[i+1]` for 64 bits, followed by `b[i] + b[i+1]` for next 64
+    bits and repeated.
+
 *   `V`: `{i,u}{8,16,32},f{16,32}`, `VW`: `Vec<RepartitionToWide<DFromV<V>>>` \
     <code>VW **SumsOf2**(V v)</code>
     returns the sums of 2 consecutive lanes, promoting each sum into a lane of
