@@ -2501,6 +2501,22 @@ The following `ReverseN` must not be called if `Lanes(D()) < N`:
     must be in the range `[0, 2 * Lanes(d))` but need not be unique. The index
     type `TI` must be an integer of the same size as `TFromD<D>`.
 
+*   <code>V **TableLookupLanesOr**(M m, V a, V b, unspecified)</code> returns the
+    result of `TableLookupLanes(a, unspecified)` where `m[i]` is true, and returns
+    `b[i]` where `m[i]` is false.
+
+*   <code>V **TableLookupLanesOrZero**(M m, V a, V b, unspecified)</code> returns
+    the result of `TableLookupLanes(a, unspecified)` where `m[i]` is true, and returns
+    zero where `m[i]` is false. 
+    
+*   <code>V **TwoTablesLookupLanesOr**(M m, V a, V b, V c, unspecified)</code> returns the
+    result of `TwoTablesLookupLanes(V a, V b, unspecified)` where `m[i]` is true,
+    and `a[i]` where `m[i]` is false.
+
+*   <code>V **TwoTablesLookupLanesOrZero**(M m, V a, unspecified)</code> returns
+    the result of `TwoTablesLookupLanes(V a, V b, unspecified)` where `m[i]` is
+    true, and zero where `m[i]` is false.
+
 *   <code>V **Per4LaneBlockShuffle**&lt;size_t kIdx3, size_t kIdx2, size_t
     kIdx1, size_t kIdx0&gt;(V v)</code> does a per 4-lane block shuffle of `v`
     if `Lanes(DFromV<V>())` is greater than or equal to 4 or a shuffle of the
