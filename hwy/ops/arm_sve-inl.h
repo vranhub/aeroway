@@ -2076,6 +2076,8 @@ namespace detail {
 HWY_SVE_FOREACH(HWY_SVE_COMPARE_Z, MaskedEq, cmpeq)
 HWY_SVE_FOREACH(HWY_SVE_COMPARE_Z, MaskedNe, cmpne)
 HWY_SVE_FOREACH(HWY_SVE_COMPARE_Z, MaskedLt, cmplt)
+HWY_SVE_FOREACH(HWY_SVE_COMPARE_Z, MaskedLe, cmple)
+
 }  // namespace detail
 
 #undef HWY_SVE_COMPARE_Z
@@ -2083,6 +2085,11 @@ HWY_SVE_FOREACH(HWY_SVE_COMPARE_Z, MaskedLt, cmplt)
 template <class V, class M, class D = DFromV<V>>
 HWY_API MFromD<D> MaskedCompEq(M m, V a, V b) {
   return detail::MaskedEq(m, a, b);
+}
+
+template <class V, class M, class D = DFromV<V>>
+HWY_API  MFromD<D> MaskedCompNe(M m, V a, V b) {
+  return detail::MaskedNe(m, a, b);
 }
 
 template <class V, class M, class D = DFromV<V>>
@@ -2094,6 +2101,17 @@ template <class V, class M, class D = DFromV<V>>
 HWY_API MFromD<D> MaskedCompGt(M m, V a, V b) {
   // Swap args to reverse comparison
   return detail::MaskedLt(m, b, a);
+}
+
+template <class V, class M, class D = DFromV<V>>
+HWY_API MFromD<D> MaskedCompLe(M m, V a, V b) {
+  return detail::MaskedLe(m, a, b);
+}
+
+template <class V, class M, class D = DFromV<V>>
+HWY_API MFromD<D> MaskedCompGe(M m, V a, V b) {
+  // Swap args to reverse comparison
+  return detail::MaskedLe(m, b, a);
 }
 
 template <class V, class M, class D = DFromV<V>>

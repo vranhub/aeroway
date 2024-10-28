@@ -713,6 +713,11 @@ HWY_API auto MaskedCompEq(M m, V a, V b) -> decltype(a == b) {
 }
 
 template <class V, class M>
+HWY_API auto MaskedCompNe(M m, V a, V b) -> decltype(a == b) {
+  return And(m, Ne(a, b));
+}
+
+template <class V, class M>
 HWY_API auto MaskedCompLt(M m, V a, V b) -> decltype(a == b) {
   return And(m, Lt(a, b));
 }
@@ -720,6 +725,16 @@ HWY_API auto MaskedCompLt(M m, V a, V b) -> decltype(a == b) {
 template <class V, class M>
 HWY_API auto MaskedCompGt(M m, V a, V b) -> decltype(a == b) {
   return And(m, Gt(a, b));
+}
+
+template <class V, class M>
+HWY_API auto MaskedCompLe(M m, V a, V b) -> decltype(a == b) {
+  return And(m, Le(a, b));
+}
+
+template <class V, class M>
+HWY_API auto MaskedCompGe(M m, V a, V b) -> decltype(a == b) {
+  return And(m, Ge(a, b));
 }
 
 template <class V, class M, class D = DFromV<V>>

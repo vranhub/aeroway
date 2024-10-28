@@ -1693,10 +1693,19 @@ equivalent to, and potentially more efficient than, `And(m, Eq(a, b));` etc.
 *   <code>M **MaskedCompEq**(M m, V a, V b)</code>: returns `a[i] == b[i]` or
     `false` if `m[i]` is false.
 
+*   <code>M **MaskedCompNe**(M m, V a, V b)</code>: returns `a[i] != b[i]` or
+    `false` if `m[i]` is false.
+
 *   <code>M **MaskedCompLt**(M m, V a, V b)</code>: returns `a[i] < b[i]` or
     `false` if `m[i]` is false.
 
 *   <code>M **MaskedCompGt**(M m, V a, V b)</code>: returns `a[i] > b[i]` or
+    `false` if `m[i]` is false.
+
+*   <code>M **MaskedCompLe**(M m, V a, V b)</code>: returns `a[i] <= b[i]` or
+    `false` if `m[i]` is false.
+
+*   <code>M **MaskedCompGe**(M m, V a, V b)</code>: returns `a[i] >= b[i]` or
     `false` if `m[i]` is false.
 
 ### Memory
