@@ -198,29 +198,39 @@ HWY_NOINLINE void TestAllPromoteRoundTo() {
 
 template <typename ToT>
 struct TestMaskedPromoteToOrZero {
-  template <typename T, class D>
-  HWY_NOINLINE void operator()(T /*unused*/, D from_d) {
+  template <class T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
     static_assert(sizeof(T) < sizeof(ToT), "Input type must be narrower");
     const Rebind<ToT, D> to_d;
 
-    const size_t N = Lanes(from_d);
-    auto from = AllocateAligned<T>(N);
+    const size_t N = Lanes(d);
     auto expected = AllocateAligned<ToT>(N);
     auto bool_lanes = AllocateAligned<ToT>(N);
-    HWY_ASSERT(from && expected && bool_lanes);
+    HWY_ASSERT(expected && bool_lanes);
+
+    const auto v1 = Iota(d, 5);
+
+    RandomState rng;
 
     for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
-      const auto v_from = Set(from_d, ConvertScalarTo<T>(1));
-      const auto v_to = Set(to_d, ConvertScalarTo<ToT>(1));
-      const auto first_n = FirstN(to_d, (1 + static_cast<size_t>(std::rand()) % N));
+      for (size_t i=0; i < N; ++i) {
+        bool_lanes[i] = (Random32(&rng) & 1024) ? T(1) : T(0);
 
-      const auto expected = IfThenElseZero(first_n, v_to);
-      HWY_ASSERT_VEC_EQ(to_d, expected,
-                        MaskedPromoteToOrZero(first_n, to_d, v_from));
+        if (bool_lanes[i]) {
+          expected[i] = ConvertScalarTo<T>(i + 5);
+        } else {
+          expected[i] = ConvertScalarTo<T>(0);
+        }
+      }
 
+      const auto mask_i = Load(to_d, bool_lanes.get());
+      const auto mask = RebindMask(to_d, Gt(mask_i, Zero(to_d)));
+
+      HWY_ASSERT_VEC_EQ(to_d, expected.get(), MaskedPromoteToOrZero(mask, to_d, v1));
     }
   }
 };
+
 
 HWY_NOINLINE void TestAllMaskedPromoteToOrZero() {
   const ForPromoteVectors<TestMaskedPromoteToOrZero<uint16_t>, 1> to_u16div2;
@@ -873,14 +883,14 @@ struct TestMaskedIntFromFloat {
           expected[i] = ConvertScalarTo<TI>(0);
         }
       }
+      const auto mask_i = Load(di, bool_lanes.get());
+      const auto mask = RebindMask(di, Gt(mask_i, Zero(di)));
+
+      const auto v1 = Load(df, from.get());
+
+      // Int from float
+      HWY_ASSERT_VEC_EQ(di, expected.get(), MaskedConvertToOrZero(mask, di,  v1));
     }
-    const auto mask_i = Load(di, bool_lanes.get());
-    const auto mask = RebindMask(di, Gt(mask_i, Zero(di)));
-
-    const auto v1 = Load(df, from.get());
-
-    // Int from float
-    HWY_ASSERT_VEC_EQ(di, expected.get(), MaskedConvertToOrZero(mask, di,  v1));
   }
 };
 
@@ -908,14 +918,14 @@ struct TestMaskedFloatFromInt {
           expected[i] = ConvertScalarTo<TF>(0);
         }
       }
+      const auto mask_i = Load(df, bool_lanes.get());
+      const auto mask = RebindMask(df, Gt(mask_i, Zero(df)));
+
+      const auto v1 = Load(di, from.get());
+
+      // Float from int
+      HWY_ASSERT_VEC_EQ(df, expected.get(), MaskedConvertToOrZero(mask, df,  v1));
     }
-    const auto mask_i = Load(df, bool_lanes.get());
-    const auto mask = RebindMask(df, Gt(mask_i, Zero(df)));
-
-    const auto v1 = Load(di, from.get());
-
-    // Float from int
-    HWY_ASSERT_VEC_EQ(df, expected.get(), MaskedConvertToOrZero(mask, df,  v1));
 
   }
 };
