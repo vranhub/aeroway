@@ -6325,24 +6325,6 @@ HWY_API V PairwiseAdd(D d, V a, V b) {
   return detail::PairwiseAdd(d, a, b);
 }
 
-// Uninterleaved pairwise subtraction which returns [pws(b), pws(a)]
-template <class D, class V, HWY_IF_LANES_GT_D(D, 1)>
-HWY_API V PairwiseSub(D d, V a, V b) {
-  using T = TFromD<D>;
-  using TNegate = If<!IsSigned<T>(), MakeSigned<T>, T>;
-
-  const Rebind<TNegate, D> d_negate;
-
-  // Negate every even value of a and b
-  const auto a_negatable = BitCast(d_negate, a);
-  const auto b_negatable = BitCast(d_negate, b);
-
-  const auto a_even_neg = BitCast(d, OddEven(a_negatable, Neg(a_negatable)));
-  const auto b_even_neg = BitCast(d, OddEven(b_negatable, Neg(b_negatable)));
-
-  return detail::PairwiseAdd(d, a_even_neg, b_even_neg);
-}
-
 #endif // HWY_SVE_HAVE_2
 #endif // HWY_TARGET != HWY_SCALAR
 
