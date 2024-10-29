@@ -878,11 +878,13 @@ struct TestMaskedIntFromFloat {
 
         bool_lanes[i] = (Random32(&rng) & 1024) ? TI(1) : TI(0);
         if (bool_lanes[i]) {
-          expected[i] = ConvertScalarTo<TI>(from[i]);
+          expected[i] = ConvertScalarTo<TI>(
+            HWY_MIN(
+              HWY_MAX(from[i], static_cast<TF>(LimitsMin<TI>())
+            ), static_cast<TF>(LimitsMax<TI>())));
         } else {
           expected[i] = ConvertScalarTo<TI>(0);
         }
-      }
       const auto mask_i = Load(di, bool_lanes.get());
       const auto mask = RebindMask(di, Gt(mask_i, Zero(di)));
 
@@ -890,6 +892,7 @@ struct TestMaskedIntFromFloat {
 
       // Int from float
       HWY_ASSERT_VEC_EQ(di, expected.get(), MaskedConvertToOrZero(mask, di,  v1));
+      }
     }
   }
 };
