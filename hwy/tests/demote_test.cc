@@ -143,6 +143,104 @@ HWY_NOINLINE void TestAllDemoteToMixed() {
 }
 
 template <typename ToT>
+struct TestMaskedDemoteToOrZeroInt {
+  template <typename T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D from_d) {
+    static_assert(!IsFloat<ToT>(), "Use TestDemoteToFloat for float output");
+    static_assert(sizeof(T) > sizeof(ToT), "Input type must be wider");
+    const Rebind<ToT, D> to_d;
+
+    const size_t N = Lanes(from_d);
+    auto from = AllocateAligned<T>(N);
+    auto expected = AllocateAligned<ToT>(N);
+    auto bool_lanes = AllocateAligned<ToT>(N);
+    HWY_ASSERT(from && expected && bool_lanes);
+    // Narrower range in the wider type, for clamping before we cast
+    const T min = ConvertScalarTo<T>(IsSigned<T>() ? LimitsMin<ToT>()
+                                                   : static_cast<ToT>(0));
+    const T max = LimitsMax<ToT>();
+    RandomState rng;
+    for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
+      for (size_t i = 0; i < N; ++i) {
+        const uint64_t bits = rng();
+        CopyBytes<sizeof(T)>(&bits, &from[i]);  // not same size
+
+        bool_lanes[i] = (Random32(&rng) & 1024) ? ToT(1) : ToT(0);
+        if (bool_lanes[i]) {
+          expected[i] = static_cast<ToT>(HWY_MIN(HWY_MAX(min, from[i]), max));
+
+        } else {
+          expected[i] = ConvertScalarTo<ToT>(0);
+        }
+      }
+
+      const auto mask_i = Load(to_d, bool_lanes.get());
+      const auto mask = RebindMask(to_d, Gt(mask_i, Zero(to_d)));
+
+      const auto v1 = Load(from_d, from.get());
+
+      HWY_ASSERT_VEC_EQ(to_d, expected.get(),
+                        MaskedDemoteToOrZero(mask, to_d, v1));
+
+    }
+  }
+};
+
+HWY_NOINLINE void TestAllMaskedDemoteToOrZeroInt() {
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint8_t>> from_i16_to_u8;
+  from_i16_to_u8(int16_t());
+  from_i16_to_u8(uint16_t());
+
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<int8_t>> from_i16_to_i8;
+  from_i16_to_i8(int16_t());
+  from_i16_to_i8(uint16_t());
+
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint8_t>, 2> from_i32_to_u8;
+  from_i32_to_u8(int32_t());
+  from_i32_to_u8(uint32_t());
+
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<int8_t>, 2> from_i32_to_i8;
+  from_i32_to_i8(int32_t());
+  from_i32_to_i8(uint32_t());
+
+#if HWY_HAVE_INTEGER64
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint8_t>, 3> from_i64_to_u8;
+  from_i64_to_u8(int64_t());
+  from_i64_to_u8(uint64_t());
+
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<int8_t>, 3> from_i64_to_i8;
+  from_i64_to_i8(int64_t());
+  from_i64_to_i8(uint64_t());
+#endif
+
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint16_t>> from_i32_to_u16;
+  from_i32_to_u16(int32_t());
+  from_i32_to_u16(uint32_t());
+
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<int16_t>> from_i32_to_i16;
+  from_i32_to_i16(int32_t());
+  from_i32_to_i16(uint32_t());
+
+#if HWY_HAVE_INTEGER64
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint16_t>, 2> from_i64_to_u16;
+  from_i64_to_u16(int64_t());
+  from_i64_to_u16(uint64_t());
+
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<int16_t>, 2> from_i64_to_i16;
+  from_i64_to_i16(int64_t());
+  from_i64_to_i16(uint64_t());
+
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint32_t>> from_i64_to_u32;
+  from_i64_to_u32(int64_t());
+  from_i64_to_u32(uint64_t());
+
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<int32_t>> from_i64_to_i32;
+  from_i64_to_i32(int64_t());
+  from_i64_to_i32(uint64_t());
+#endif
+}
+
+template <typename ToT>
 struct TestDemoteToFloat {
   template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D from_d) {
@@ -896,6 +994,7 @@ namespace hwy {
 #if !HWY_IS_MSAN
 HWY_BEFORE_TEST(HwyDemoteTest);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllDemoteToInt);
+HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllMaskedDemoteToOrZeroInt);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllDemoteToMixed);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllDemoteToFloat);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllDemoteUI64ToFloat);
