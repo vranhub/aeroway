@@ -3745,6 +3745,13 @@ HWY_API VFromD<D32> DemoteCeilTo(D32 d32, VFromD<Rebind<double, D32>> v) {
 }
 #endif // HWY_HAVE_FLOAT64
 
+#if HWY_HAVE_FLOAT16
+template <class D16, HWY_IF_F16_D(D16)>
+HWY_API VFromD<D16> DemoteCeilTo(D16 d16, VFromD<Rebind<float, D16>> v) {
+  return DemoteTo(d16, Ceil(v));
+}
+#endif // HWY_HAVE_FLOAT16
+
 #endif //HWY_NATIVE_DEMOTE_CEIL_TO
 
 #if (defined(HWY_NATIVE_DEMOTE_FLOOR_TO) == defined(HWY_TARGET_TOGGLE))
@@ -3760,6 +3767,13 @@ HWY_API VFromD<D32> DemoteFloorTo(D32 d32, VFromD<Rebind<double, D32>> v) {
   return DemoteTo(d32, Floor(v));
 }
 #endif // HWY_HAVE_FLOAT64
+
+#if HWY_HAVE_FLOAT16
+template <class D16, HWY_IF_F16_D(D16)>
+HWY_API VFromD<D16> DemoteFloorTo(D16 d16, VFromD<Rebind<float, D16>> v) {
+  return DemoteTo(d16, Floor(v));
+}
+#endif // HWY_HAVE_FLOAT16
 
 #endif //HWY_NATIVE_DEMOTE_FLOOR_TO
 
