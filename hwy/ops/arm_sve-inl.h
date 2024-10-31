@@ -6447,6 +6447,7 @@ HWY_API svuint32_t WidenMulPairwiseAdd(Simd<uint32_t, N, kPow2> d32,
     HWY_SVE_FOREACH_UI16(HWY_SVE_SAT_MUL_WIDEN_PW_ACC_SVE_2, SatWidenMulPairwiseAccumulate, _)
     HWY_SVE_FOREACH_UI32(HWY_SVE_SAT_MUL_WIDEN_PW_ACC_SVE_2, SatWidenMulPairwiseAccumulate, _)
     HWY_SVE_FOREACH_UI64(HWY_SVE_SAT_MUL_WIDEN_PW_ACC_SVE_2, SatWidenMulPairwiseAccumulate, _)
+  #undef HWY_SVE_SAT_MUL_WIDEN_PW_ACC_SVE_2
 #endif
 
 // ------------------------------ SatWidenMulAccumFixedPoint
