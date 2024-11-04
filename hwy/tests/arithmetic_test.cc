@@ -288,21 +288,22 @@ struct TestPairwiseAdd {
     const Vec<D> b = Iota(d, 2);
 
     const size_t N = Lanes(d);
-    if (N < 2) { return; }
+    if (N < 2) {
+      return;
+    }
     T even_val_a, odd_val_a, even_val_b, odd_val_b;
     auto expected = AllocateAligned<T>(N);
     HWY_ASSERT(expected);
 
-    for (size_t i = 0; i < N; i+=2) {
-
+    for (size_t i = 0; i < N; i += 2) {
       // Results of a and b are interleaved
-      even_val_a = ConvertScalarTo<T>(i + 1);   // a[i]
-      odd_val_a = ConvertScalarTo<T>(i + 1 + 1);// a[i+1]
-      even_val_b = ConvertScalarTo<T>(i + 2);   // b[i]
-      odd_val_b = ConvertScalarTo<T>(i + 2 + 1);// b[i+1]
+      even_val_a = ConvertScalarTo<T>(i + 1);     // a[i]
+      odd_val_a = ConvertScalarTo<T>(i + 1 + 1);  // a[i+1]
+      even_val_b = ConvertScalarTo<T>(i + 2);     // b[i]
+      odd_val_b = ConvertScalarTo<T>(i + 2 + 1);  // b[i+1]
 
       expected[i] = even_val_a + odd_val_a;
-      expected[i+1] = even_val_b + odd_val_b;
+      expected[i + 1] = even_val_b + odd_val_b;
     }
 
     HWY_ASSERT_VEC_EQ(d, expected.get(), PairwiseAdd(d, a, b));
@@ -318,7 +319,9 @@ struct TestPairwiseSub {
   template <typename T, class D, HWY_IF_LANES_GT_D(D, 1)>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
     const size_t N = Lanes(d);
-    if (N < 2) { return; }
+    if (N < 2) {
+      return;
+    }
 
     auto a_lanes = AllocateAligned<T>(N);
     auto b_lanes = AllocateAligned<T>(N);
@@ -328,20 +331,20 @@ struct TestPairwiseSub {
     auto expected = AllocateAligned<T>(N);
     HWY_ASSERT(expected);
 
-    for (size_t i = 0; i < N; i+=2) {
+    for (size_t i = 0; i < N; i += 2) {
       // Results of a and are interleaved
-      even_val_a = ConvertScalarTo<T>(i);     // a[i]
-      odd_val_a = ConvertScalarTo<T>(i*i);    // a[i+1]
-      even_val_b = ConvertScalarTo<T>(i);     // b[i]
-      odd_val_b = ConvertScalarTo<T>(i*i + 2);// b[i+1]
+      even_val_a = ConvertScalarTo<T>(i);         // a[i]
+      odd_val_a = ConvertScalarTo<T>(i * i);      // a[i+1]
+      even_val_b = ConvertScalarTo<T>(i);         // b[i]
+      odd_val_b = ConvertScalarTo<T>(i * i + 2);  // b[i+1]
 
-      a_lanes[i] = even_val_a;  // a[i]
-      a_lanes[i+1] = odd_val_a; // a[i+1]
-      b_lanes[i] = even_val_b;  // b[i]
-      b_lanes[i+1] = odd_val_b; // b[i+1]
+      a_lanes[i] = even_val_a;     // a[i]
+      a_lanes[i + 1] = odd_val_a;  // a[i+1]
+      b_lanes[i] = even_val_b;     // b[i]
+      b_lanes[i + 1] = odd_val_b;  // b[i+1]
 
       expected[i] = odd_val_a - even_val_a;
-      expected[i+1] = odd_val_b - even_val_b;
+      expected[i + 1] = odd_val_b - even_val_b;
     }
 
     const auto a = Load(d, a_lanes.get());
@@ -366,8 +369,8 @@ struct TestPairWiseAdd128 {
     auto expected = AllocateAligned<T>(N);
 
     const size_t vec_bytes = sizeof(T) * N;
-    const size_t blocks_of_128 = (vec_bytes >= 16)? vec_bytes / 16: 1;
-    const size_t lanes_in_128 = (vec_bytes >= 16)? 16 / sizeof(T): N;
+    const size_t blocks_of_128 = (vec_bytes >= 16) ? vec_bytes / 16 : 1;
+    const size_t lanes_in_128 = (vec_bytes >= 16) ? 16 / sizeof(T) : N;
 
     for (size_t block = 0; block < blocks_of_128; ++block) {
       for (size_t i = 0; i < lanes_in_128 / 2; ++i) {
@@ -379,7 +382,8 @@ struct TestPairWiseAdd128 {
         odd_val_b = ConvertScalarTo<T>(j + 3);
 
         expected[block * lanes_in_128 + i] = even_val_a + odd_val_a;
-        expected[block * lanes_in_128 + lanes_in_128 / 2 + i] = even_val_b + odd_val_b;
+        expected[block * lanes_in_128 + lanes_in_128 / 2 + i] =
+            even_val_b + odd_val_b;
       }
     }
     const auto expected_v = Load(d, expected.get());
@@ -470,7 +474,7 @@ struct TestAddLower {
       expected[i] = ConvertScalarTo<T>((i == 0) ? 3 : (i + 1));
     }
 
-    HWY_ASSERT_VEC_EQ(d, expected.get(), AddLower(a,b));
+    HWY_ASSERT_VEC_EQ(d, expected.get(), AddLower(a, b));
 #else
     (void)d;
 #endif
@@ -478,7 +482,6 @@ struct TestAddLower {
 };
 
 HWY_NOINLINE void TestAllAddLower() {
-
   ForAllTypes(ForPartialVectors<TestAddLower>());
 }
 

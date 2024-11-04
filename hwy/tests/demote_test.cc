@@ -181,7 +181,6 @@ struct TestMaskedDemoteToOrZeroInt {
 
       HWY_ASSERT_VEC_EQ(to_d, expected.get(),
                         MaskedDemoteToOrZero(mask, to_d, v1));
-
     }
   }
 };
@@ -195,7 +194,8 @@ HWY_NOINLINE void TestAllMaskedDemoteToOrZeroInt() {
   from_i16_to_i8(int16_t());
   from_i16_to_i8(uint16_t());
 
-  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint8_t>, 2> from_i32_to_u8;
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint8_t>, 2>
+      from_i32_to_u8;
   from_i32_to_u8(int32_t());
   from_i32_to_u8(uint32_t());
 
@@ -204,7 +204,8 @@ HWY_NOINLINE void TestAllMaskedDemoteToOrZeroInt() {
   from_i32_to_i8(uint32_t());
 
 #if HWY_HAVE_INTEGER64
-  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint8_t>, 3> from_i64_to_u8;
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint8_t>, 3>
+      from_i64_to_u8;
   from_i64_to_u8(int64_t());
   from_i64_to_u8(uint64_t());
 
@@ -222,11 +223,13 @@ HWY_NOINLINE void TestAllMaskedDemoteToOrZeroInt() {
   from_i32_to_i16(uint32_t());
 
 #if HWY_HAVE_INTEGER64
-  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint16_t>, 2> from_i64_to_u16;
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<uint16_t>, 2>
+      from_i64_to_u16;
   from_i64_to_u16(int64_t());
   from_i64_to_u16(uint64_t());
 
-  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<int16_t>, 2> from_i64_to_i16;
+  const ForDemoteVectors<TestMaskedDemoteToOrZeroInt<int16_t>, 2>
+      from_i64_to_i16;
   from_i64_to_i16(int64_t());
   from_i64_to_i16(uint64_t());
 
@@ -602,11 +605,12 @@ struct TestDemoteRoundFloatToInt {
 
     const size_t N = Lanes(from_d);
     auto from = AllocateAligned<T>(N);
-    auto from_ceil= AllocateAligned<T>(N);
+    auto from_ceil = AllocateAligned<T>(N);
     auto from_floor = AllocateAligned<T>(N);
     auto expected_ceil = AllocateAligned<ToT>(N);
     auto expected_floor = AllocateAligned<ToT>(N);
-    HWY_ASSERT(from && from_ceil && from_floor && expected_ceil && expected_floor);
+    HWY_ASSERT(from && from_ceil && from_floor && expected_ceil &&
+               expected_floor);
 
     // Narrower range in the wider type, for clamping before we cast
     const T min = ConvertScalarTo<T>(IsSigned<T>() ? LimitsMin<ToT>()
@@ -618,8 +622,10 @@ struct TestDemoteRoundFloatToInt {
       for (size_t i = 0; i < N; ++i) {
         const uint64_t bits = rng();
         CopyBytes<sizeof(T)>(&bits, &from[i]);  // not same size
-        expected_ceil[i] = static_cast<ToT>(std::ceil((HWY_MIN(HWY_MAX(min, from[i]), max))));
-        expected_floor[i] = static_cast<ToT>(std::floor((HWY_MIN(HWY_MAX(min, from[i]), max))));
+        expected_ceil[i] =
+            static_cast<ToT>(std::ceil((HWY_MIN(HWY_MAX(min, from[i]), max))));
+        expected_floor[i] =
+            static_cast<ToT>(std::floor((HWY_MIN(HWY_MAX(min, from[i]), max))));
       }
       const auto in = Load(from_d, from.get());
       HWY_ASSERT_VEC_EQ(to_d, expected_ceil.get(), DemoteCeilTo(to_d, in));
@@ -629,7 +635,7 @@ struct TestDemoteRoundFloatToInt {
     for (size_t rep = 0; rep < AdjustedReps(1000); ++rep) {
       for (size_t i = 0; i < N; ++i) {
         const uint64_t bits = rng();
-        CopyBytes<sizeof(ToT)>(&bits, &expected_ceil[i]);  // not same size
+        CopyBytes<sizeof(ToT)>(&bits, &expected_ceil[i]);   // not same size
         CopyBytes<sizeof(ToT)>(&bits, &expected_floor[i]);  // not same size
 
         if (!IsSigned<T>() && IsSigned<ToT>()) {
@@ -644,7 +650,8 @@ struct TestDemoteRoundFloatToInt {
       const auto in_ceil = Load(from_d, from_ceil.get());
       const auto in_floor = Load(from_d, from_floor.get());
       HWY_ASSERT_VEC_EQ(to_d, expected_ceil.get(), DemoteCeilTo(to_d, in_ceil));
-      HWY_ASSERT_VEC_EQ(to_d, expected_floor.get(), DemoteFloorTo(to_d, in_floor));
+      HWY_ASSERT_VEC_EQ(to_d, expected_floor.get(),
+                        DemoteFloorTo(to_d, in_floor));
     }
   }
 };

@@ -375,7 +375,9 @@ struct TestMaskedReduceSum {
       const Mask<D> mask = RebindMask(d, Gt(mask_i, Zero(d)));
 
       // If all elements are disabled the result is implementation defined
-      if (AllFalse(d, mask)) { continue; }
+      if (AllFalse(d, mask)) {
+        continue;
+      }
 
       HWY_ASSERT_EQ(expected, MaskedReduceSum(d, mask, v2));
     }
@@ -398,7 +400,8 @@ struct TestMaskedReduceMin {
     HWY_ASSERT(bool_lanes);
 
     for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
-      T expected = ConvertScalarTo<T>(N + 3);  // larger than any values in the vector
+      T expected =
+          ConvertScalarTo<T>(N + 3);  // larger than any values in the vector
       for (size_t i = 0; i < N; ++i) {
         bool_lanes[i] = (Random32(&rng) & 1024) ? T(1) : T(0);
         if (bool_lanes[i]) {
@@ -412,7 +415,9 @@ struct TestMaskedReduceMin {
       const Mask<D> mask = RebindMask(d, Gt(mask_i, Zero(d)));
 
       // If all elements are disabled the result is implementation defined
-      if (AllFalse(d, mask)) { continue; }
+      if (AllFalse(d, mask)) {
+        continue;
+      }
 
       HWY_ASSERT_EQ(expected, MaskedReduceMin(d, mask, v2));
     }
@@ -449,7 +454,9 @@ struct TestMaskedReduceMax {
       const Mask<D> mask = RebindMask(d, Gt(mask_i, Zero(d)));
 
       // If all elements are disabled the result is implementation defined
-      if (AllFalse(d, mask)) { continue; }
+      if (AllFalse(d, mask)) {
+        continue;
+      }
 
       HWY_ASSERT_EQ(expected, MaskedReduceMax(d, mask, v2));
     }

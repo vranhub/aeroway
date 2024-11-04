@@ -140,7 +140,8 @@ struct TestMaskedMulCplxOr {
       auto d = ConvertScalarTo<T>(i + 10 + 1);
       auto e = ConvertScalarTo<T>(i + 15);
       auto f = ConvertScalarTo<T>(i + 15 + 1);
-      if ((i % 4) == 0) {  // Alternate between masking the real and imaginary lanes
+      if ((i % 4) ==
+          0) {  // Alternate between masking the real and imaginary lanes
         bool_lanes[i + 0] = ConvertScalarTo<T>(1);
         expected[i + 0] = ConvertScalarTo<T>((a * c) - (b * d));
         bool_lanes[i + 1] = ConvertScalarTo<T>(0);
@@ -218,8 +219,8 @@ struct TestMulCplxConjAdd {
       auto d = ConvertScalarTo<T>(i + 10 + 1);
       auto e = ConvertScalarTo<T>(i + 15);
       auto f = ConvertScalarTo<T>(i + 15 + 1);
-      expected[i + 0] = ConvertScalarTo<T>((e + (c*a)) + (d*b));
-      expected[i + 1] = ConvertScalarTo<T>((f + (c*b)) - (d*a));
+      expected[i + 0] = ConvertScalarTo<T>((e + (c * a)) + (d * b));
+      expected[i + 1] = ConvertScalarTo<T>((f + (c * b)) - (d * a));
     }
     HWY_ASSERT_VEC_EQ(d, expected.get(), MulCplxConjAdd(v1, v2, v3));
 #else
@@ -250,7 +251,8 @@ struct TestMaskedMulCplxConjOrZero {
       auto b = ConvertScalarTo<T>(i + 2 + 1);
       auto c = ConvertScalarTo<T>(i + 10);
       auto d = ConvertScalarTo<T>(i + 10 + 1);
-      if ((i % 4) == 0) {  // Alternate between masking the real and imaginary lanes
+      if ((i % 4) ==
+          0) {  // Alternate between masking the real and imaginary lanes
         bool_lanes[i + 0] = ConvertScalarTo<T>(1);
         expected[i + 0] = ConvertScalarTo<T>((a * c) + (b * d));
         bool_lanes[i + 1] = ConvertScalarTo<T>(0);
@@ -298,23 +300,25 @@ struct TestMaskedMulCplxConjAddOrZero {
       auto d = ConvertScalarTo<T>(i + 10 + 1);
       auto e = ConvertScalarTo<T>(i + 15);
       auto f = ConvertScalarTo<T>(i + 15 + 1);
-      if ((i % 4) == 2) {  // Alternate between masking the real and imaginary lanes
+      if ((i % 4) ==
+          2) {  // Alternate between masking the real and imaginary lanes
         bool_lanes[i + 0] = ConvertScalarTo<T>(1);
-        expected[i + 0] = ConvertScalarTo<T>((e + (c*a)) + (d*b));
+        expected[i + 0] = ConvertScalarTo<T>((e + (c * a)) + (d * b));
         bool_lanes[i + 1] = ConvertScalarTo<T>(0);
         expected[i + 1] = ConvertScalarTo<T>(0);
       } else {
         bool_lanes[i + 0] = ConvertScalarTo<T>(0);
         expected[i + 0] = ConvertScalarTo<T>(0);
         bool_lanes[i + 1] = ConvertScalarTo<T>(1);
-        expected[i + 1] = ConvertScalarTo<T>((f + (c*b)) - (d*a));
+        expected[i + 1] = ConvertScalarTo<T>((f + (c * b)) - (d * a));
       }
     }
 
     const auto mask_i = Load(d, bool_lanes.get());
     const Mask<D> mask = Gt(mask_i, Zero(d));
 
-    HWY_ASSERT_VEC_EQ(d, expected.get(), MaskedMulCplxConjAddOrZero(mask, v1, v2, v3));
+    HWY_ASSERT_VEC_EQ(d, expected.get(),
+                      MaskedMulCplxConjAddOrZero(mask, v1, v2, v3));
 #else
     (void)d;
 #endif  // HWY_TARGET != HWY_SCALAR

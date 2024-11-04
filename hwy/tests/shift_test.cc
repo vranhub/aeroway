@@ -509,14 +509,17 @@ struct TestMaskedShiftOrZero {
     const auto v1 = Iota(d, 1);
     const MFromD<D> first_five = FirstN(d, 5);
 
-    HWY_ASSERT_VEC_EQ(d, ShiftLeft<1>(v1), MaskedShiftLeftOrZero<1>(all_true, v1));
-    HWY_ASSERT_VEC_EQ(d, ShiftRight<1>(v1), MaskedShiftRightOrZero<1>(all_true, v1));
+    HWY_ASSERT_VEC_EQ(d, ShiftLeft<1>(v1),
+                      MaskedShiftLeftOrZero<1>(all_true, v1));
+    HWY_ASSERT_VEC_EQ(d, ShiftRight<1>(v1),
+                      MaskedShiftRightOrZero<1>(all_true, v1));
 
     const Vec<D> v1_exp_left = IfThenElse(first_five, ShiftLeft<1>(v1), v0);
     HWY_ASSERT_VEC_EQ(d, v1_exp_left, MaskedShiftLeftOrZero<1>(first_five, v1));
 
     const Vec<D> v1_exp_right = IfThenElse(first_five, ShiftRight<1>(v1), v0);
-    HWY_ASSERT_VEC_EQ(d, v1_exp_right, MaskedShiftRightOrZero<1>(first_five, v1));
+    HWY_ASSERT_VEC_EQ(d, v1_exp_right,
+                      MaskedShiftRightOrZero<1>(first_five, v1));
   }
 };
 struct TestMaskedShiftRightOr {
@@ -555,14 +558,14 @@ HWY_NOINLINE void TestAllMaskedShift() {
 struct TestMultiShift {
   uint64_t byte_swap_64(uint64_t x) {
     // Equivalent to std::byteswap for uint64 (in C++23)
-    return  ((x << 56) & 0xff00000000000000ULL) |
-            ((x << 40) & 0x00ff000000000000ULL) |
-            ((x << 24) & 0x0000ff0000000000ULL) |
-            ((x << 8)  & 0x000000ff00000000ULL) |
-            ((x >> 8)  & 0x00000000ff000000ULL) |
-            ((x >> 24) & 0x0000000000ff0000ULL) |
-            ((x >> 40) & 0x000000000000ff00ULL) |
-            ((x >> 56) & 0x00000000000000ffULL);
+    return ((x << 56) & 0xff00000000000000ULL) |
+           ((x << 40) & 0x00ff000000000000ULL) |
+           ((x << 24) & 0x0000ff0000000000ULL) |
+           ((x << 8) & 0x000000ff00000000ULL) |
+           ((x >> 8) & 0x00000000ff000000ULL) |
+           ((x >> 24) & 0x0000000000ff0000ULL) |
+           ((x >> 40) & 0x000000000000ff00ULL) |
+           ((x >> 56) & 0x00000000000000ffULL);
   }
 
   template <class T, class D>
@@ -579,10 +582,11 @@ struct TestMultiShift {
     // Test byte aligned shifts
     // First 8 values define the transformation for even lanes
     // Second 8 values define the transformation for odd lanes
-    auto indices = Dup128VecFromValues(du8,
-      0, 8, 16, 24, 32, 40, 48, 56,  // Return every byte to its original location
-      56, 48, 40, 32, 24, 16, 8, 0  // Reverse byte order
-    );
+    auto indices =
+        Dup128VecFromValues(du8, 0, 8, 16, 24, 32, 40, 48,
+                            56,  // Return every byte to its original location
+                            56, 48, 40, 32, 24, 16, 8, 0  // Reverse byte order
+        );
     auto expected = AllocateAligned<T>(N);
     HWY_ASSERT(expected);
 
@@ -594,15 +598,18 @@ struct TestMultiShift {
 
     // Test bit level shifts, different amounts for each byte
     const auto v2 = Set(d, 0x0102010201020102ul);
-    indices = Dup128VecFromValues(du8,  // Let j = i % 8
-      0, 9, 18, 27, 36, 45, 54, 63,  // Shifting right: r[i].byte[j] = (v[j..j+1] >> j) & 0xff
-      0, 7, 14, 21, 28, 35, 42, 49  // Shifting left: r[i].byte[j] = ((v[j-1..j] << j) >> 8) & 0xff
+    indices = Dup128VecFromValues(
+        du8,  // Let j = i % 8
+        0, 9, 18, 27, 36, 45, 54,
+        63,  // Shifting right: r[i].byte[j] = (v[j..j+1] >> j) & 0xff
+        0, 7, 14, 21, 28, 35, 42,
+        49  // Shifting left: r[i].byte[j] = ((v[j-1..j] << j) >> 8) & 0xff
     );
 
     for (size_t i = 0; i < N; ++i) {
       const T v_i = ExtractLane(v2, i);
       T shift_result = 0;
-      for(size_t j = 0; j < 8; j++) {
+      for (size_t j = 0; j < 8; j++) {
         uint8_t idx = ExtractLane(indices, (i * 8) + j);
         T rot_result = (v_i >> idx) | (v_i << (64 - idx));
         shift_result |= (rot_result & 0xff) << (j * 8);
@@ -612,15 +619,18 @@ struct TestMultiShift {
     HWY_ASSERT_VEC_EQ(d, expected.get(), MultiShift(v2, indices));
 
     // Combine byte-level reordering with bit level shift
-    indices = Dup128VecFromValues(du8,
-      4, 12, 20, 28, 36, 44, 52, 60,  // Shift each byte right 4 bits
-      60, 52, 44, 36, 28, 20, 12, 4  // Shift each byte right 4 bits then reverse byte order
+    indices = Dup128VecFromValues(
+        du8, 4, 12, 20, 28, 36, 44, 52, 60,  // Shift each byte right 4 bits
+        60, 52, 44, 36, 28, 20, 12,
+        4  // Shift each byte right 4 bits then reverse byte order
     );
 
     for (size_t i = 0; i < N; i += 2) {
-      expected[i] = ConvertScalarTo<T>((initial_even >> 4) | (initial_even << (64 - 4)));
+      expected[i] =
+          ConvertScalarTo<T>((initial_even >> 4) | (initial_even << (64 - 4)));
 
-      uint64_t unreversed_val = ConvertScalarTo<T>((initial_odd >> 4) | (initial_odd << (64 - 4)));
+      uint64_t unreversed_val =
+          ConvertScalarTo<T>((initial_odd >> 4) | (initial_odd << (64 - 4)));
       expected[i + 1] = ConvertScalarTo<T>(byte_swap_64(unreversed_val));
     }
     HWY_ASSERT_VEC_EQ(d, expected.get(), MultiShift(v1, indices));

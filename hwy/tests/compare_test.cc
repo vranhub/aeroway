@@ -771,7 +771,7 @@ HWY_NOINLINE void TestAllMaskedComparision() {
 }
 
 struct TestMaskedFloatClassification {
-template <typename T, class D>
+  template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
     RandomState rng;
 

@@ -164,9 +164,12 @@ struct TestPromoteRoundTo {
       for (size_t i = 0; i < N; ++i) {
         const uint64_t bits = rng();
         CopyBytes<sizeof(T)>(&bits, &from[i]);  // not same size
-        expected_ceil[i] = ConvertScalarTo<ToT>(std::ceil(static_cast<float>(from[i])));
-        expected_floor[i] = ConvertScalarTo<ToT>(std::floor(static_cast<float>(from[i])));
-        expected_nearest_int[i] = ConvertScalarTo<ToT>(std::nearbyint(static_cast<float>(from[i])));
+        expected_ceil[i] =
+            ConvertScalarTo<ToT>(std::ceil(static_cast<float>(from[i])));
+        expected_floor[i] =
+            ConvertScalarTo<ToT>(std::floor(static_cast<float>(from[i])));
+        expected_nearest_int[i] =
+            ConvertScalarTo<ToT>(std::nearbyint(static_cast<float>(from[i])));
       }
 
       auto input = Load(from_d, from.get());
@@ -188,7 +191,7 @@ HWY_NOINLINE void TestAllPromoteRoundTo() {
 
   const ForPromoteVectors<TestPromoteRoundTo<float>, 1> to_f32div2;
   to_f32div2(hwy::float16_t());
-#endif // HWY_HAVE_FLOAT16
+#endif  // HWY_HAVE_FLOAT16
 
 #if HWY_HAVE_FLOAT64
   const ForPromoteVectors<TestPromoteRoundTo<double>, 1> to_f64div2;
@@ -213,7 +216,7 @@ struct TestMaskedPromoteToOrZero {
     RandomState rng;
 
     for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
-      for (size_t i=0; i < N; ++i) {
+      for (size_t i = 0; i < N; ++i) {
         bool_lanes[i] = (Random32(&rng) & 1024) ? T(1) : T(0);
 
         if (bool_lanes[i]) {
@@ -226,11 +229,11 @@ struct TestMaskedPromoteToOrZero {
       const auto mask_i = Load(to_d, bool_lanes.get());
       const auto mask = RebindMask(to_d, Gt(mask_i, Zero(to_d)));
 
-      HWY_ASSERT_VEC_EQ(to_d, expected.get(), MaskedPromoteToOrZero(mask, to_d, v1));
+      HWY_ASSERT_VEC_EQ(to_d, expected.get(),
+                        MaskedPromoteToOrZero(mask, to_d, v1));
     }
   }
 };
-
 
 HWY_NOINLINE void TestAllMaskedPromoteToOrZero() {
   const ForPromoteVectors<TestMaskedPromoteToOrZero<uint16_t>, 1> to_u16div2;
@@ -877,9 +880,11 @@ struct TestMaskedIntFromFloat {
       const auto mask_i = Load(di, bool_lanes.get());
       const auto mask = RebindMask(di, Gt(mask_i, Zero(di)));
 
-      // This requires a test different to that in TestMaskedFloatFromInt and TestMaskedFloatFromUint, due to
-      // differences in saturation handling between ConvertTo() and static_cast<>
-      HWY_ASSERT_VEC_EQ(di, IfThenElseZero(mask, Set(di, 1)), MaskedConvertToOrZero(mask, di,  Set(df, 1)));
+      // This requires a test different to that in TestMaskedFloatFromInt and
+      // TestMaskedFloatFromUint, due to differences in saturation handling
+      // between ConvertTo() and static_cast<>
+      HWY_ASSERT_VEC_EQ(di, IfThenElseZero(mask, Set(di, 1)),
+                        MaskedConvertToOrZero(mask, di, Set(df, 1)));
     }
   }
 };
@@ -914,7 +919,8 @@ struct TestMaskedFloatFromInt {
       const auto v1 = Load(di, from.get());
 
       // Float from int
-      HWY_ASSERT_VEC_EQ(df, expected.get(), MaskedConvertToOrZero(mask, df,  v1));
+      HWY_ASSERT_VEC_EQ(df, expected.get(),
+                        MaskedConvertToOrZero(mask, df, v1));
     }
   }
 };
@@ -943,13 +949,14 @@ struct TestMaskedFloatFromUint {
           expected[i] = ConvertScalarTo<TF>(0);
         }
       }
-    const auto mask_i = Load(df, bool_lanes.get());
-    const auto mask = RebindMask(df, Gt(mask_i, Zero(df)));
+      const auto mask_i = Load(df, bool_lanes.get());
+      const auto mask = RebindMask(df, Gt(mask_i, Zero(df)));
 
-    const auto v1 = Load(di, from.get());
+      const auto v1 = Load(di, from.get());
 
-    // Float from int
-    HWY_ASSERT_VEC_EQ(df, expected.get(), MaskedConvertToOrZero(mask, df,  v1));
+      // Float from int
+      HWY_ASSERT_VEC_EQ(df, expected.get(),
+                        MaskedConvertToOrZero(mask, df, v1));
     }
   }
 };

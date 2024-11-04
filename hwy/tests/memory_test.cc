@@ -65,13 +65,13 @@ struct TestLoadStore {
     for (size_t i = 0; i < N; ++i) {
       HWY_ASSERT_EQ(i + 2, lanes3[i]);
     }
-    
+
     // Unaligned masked load
     const MFromD<D> first_3 = FirstN(d, 3);
     const VFromD<D> vu2 = MaskedLoadU(d, first_3, &lanes[1]);
     Store(vu2, d, lanes3.get());
     for (size_t i = 0; i < N; ++i) {
-      if (i<3) {
+      if (i < 3) {
         HWY_ASSERT_EQ(i + 2, lanes3[i]);
       } else {
         HWY_ASSERT_EQ(0, lanes3[i]);
@@ -594,7 +594,8 @@ struct TestStoreTruncated {
     const Vec<D> src = Iota(d, base & hwy::LimitsMax<From>());
     // Prepare expect buffer
     const Rebind<To, D> dTo;
-    const Vec<decltype(dTo)> v_expected = Iota(dTo, base & hwy::LimitsMax<To>());
+    const Vec<decltype(dTo)> v_expected =
+        Iota(dTo, base & hwy::LimitsMax<To>());
     const size_t NFrom = Lanes(d);
     auto expected = AllocateAligned<To>(NFrom);
     StoreN(v_expected, dTo, expected.get(), NFrom);
@@ -616,7 +617,6 @@ HWY_NOINLINE void TestAllStoreTruncated() {
   ForU163264(ForPartialVectors<TestStoreTruncated>());
 }
 
-
 struct TestLoadHigher {
   template <typename T, class D, HWY_IF_LANES_GT_D(D, 1)>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
@@ -632,8 +632,7 @@ struct TestLoadHigher {
     const Vec<D> expected_output_lanes = ConcatLowerLower(d, b, a);
 
     HWY_ASSERT_VEC_EQ(d, expected_output_lanes, LoadHigher(d, a, pointer));
-
-    }
+  }
   template <typename T, class D, HWY_IF_LANES_D(D, 1)>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
     (void)d;
@@ -643,7 +642,6 @@ struct TestLoadHigher {
 HWY_NOINLINE void TestAllLoadHigher() {
   ForAllTypes(ForPartialVectors<TestLoadHigher>());
 }
-
 
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
