@@ -937,9 +937,6 @@ not a concern, these are equivalent to, and potentially more efficient than,
     <code>V **MaskedAbsOr**(M m, V a, V b)</code>: returns the absolute value of
     `a[i]` where m is active and returns `b[i]` otherwise.
 
-These ops return 0 for `mask=false` lanes. These are equivalent to, and
-potentially more efficient than, `IfThenElseZero(m, Abs(a));` etc.
-
 #### Zero masked arithmetic
 
 All ops in this section return `0` for `mask=false` lanes. These are equivalent
