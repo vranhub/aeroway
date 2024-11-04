@@ -185,7 +185,7 @@ struct TestMaskedApproximateReciprocal {
     double worst_actual = 0.0;
     double expected;
     for (size_t i = 0; i < N; ++i) {
-      if (i<3) {
+      if (i < 3) {
         expected = 1.0 / input[i];
       } else {
         expected = 0.0;
@@ -231,11 +231,11 @@ struct TestSqrtLower {
     const size_t N = Lanes(d);
     auto expected = AllocateAligned<T>(N);
 
-    for(size_t i = 0; i < N; ++i) {
-      if (i==0) {
-        expected[i] = ConvertScalarTo<T>(2); // sqrt(4)
+    for (size_t i = 0; i < N; ++i) {
+      if (i == 0) {
+        expected[i] = ConvertScalarTo<T>(2);  // sqrt(4)
       } else {
-        expected[i] = ConvertScalarTo<T>(i+4);
+        expected[i] = ConvertScalarTo<T>(i + 4);
       }
     }
 
@@ -290,24 +290,27 @@ HWY_NOINLINE void TestAllReciprocalSquareRoot() {
 
 struct TestMaskedReciprocalSquareRoot {
   template <typename T, class D>
-    HWY_NOINLINE void operator()(T /*unused*/, D d) {
-      const Vec<D> v = Set(d, ConvertScalarTo<T>(123.0f));
-      const MFromD<D> first_three = FirstN(d, 3);
-      const size_t N = Lanes(d);
-      auto lanes = AllocateAligned<T>(N);
-      HWY_ASSERT(lanes);
-      Store(MaskedApproximateReciprocalSqrtOrZero(first_three, v), d, lanes.get());
-      for (size_t i = 0; i < N; ++i) {
-        T expected_val = i<3 ? ConvertScalarTo<T>(1/std::sqrt(123.0f)) : ConvertScalarTo<T>(0);
-        T err = ConvertScalarTo<T>(ConvertScalarTo<float>(lanes[i]) - expected_val);
-        if (err < ConvertScalarTo<T>(0)) err = -err;
-        if (static_cast<double>(err) >= 4E-4) {
-          HWY_ABORT("Lane %d (%d): actual %f err %f\n", static_cast<int>(i),
-                    static_cast<int>(N), static_cast<double>(lanes[i]),
-                    static_cast<double>(err));
-        }
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const Vec<D> v = Set(d, ConvertScalarTo<T>(123.0f));
+    const MFromD<D> first_three = FirstN(d, 3);
+    const size_t N = Lanes(d);
+    auto lanes = AllocateAligned<T>(N);
+    HWY_ASSERT(lanes);
+    Store(MaskedApproximateReciprocalSqrtOrZero(first_three, v), d,
+          lanes.get());
+    for (size_t i = 0; i < N; ++i) {
+      T expected_val = i < 3 ? ConvertScalarTo<T>(1 / std::sqrt(123.0f))
+                             : ConvertScalarTo<T>(0);
+      T err =
+          ConvertScalarTo<T>(ConvertScalarTo<float>(lanes[i]) - expected_val);
+      if (err < ConvertScalarTo<T>(0)) err = -err;
+      if (static_cast<double>(err) >= 4E-4) {
+        HWY_ABORT("Lane %d (%d): actual %f err %f\n", static_cast<int>(i),
+                  static_cast<int>(N), static_cast<double>(lanes[i]),
+                  static_cast<double>(err));
       }
     }
+  }
 };
 
 HWY_NOINLINE void TestAllMaskedReciprocalSquareRoot() {
@@ -640,7 +643,6 @@ struct TestGetExponent {
 HWY_NOINLINE void TestAllGetExponent() {
   ForFloatTypes(ForPartialVectors<TestGetExponent>());
 }
-
 
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE

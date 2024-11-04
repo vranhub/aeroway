@@ -138,24 +138,25 @@ struct TestMaskedLeadingZeroCount {
     using TU = MakeUnsigned<T>;
     const RebindToUnsigned<decltype(d)> du;
     size_t N = Lanes(d);
-    const MFromD<D> first_3 = FirstN(d,3);
+    const MFromD<D> first_3 = FirstN(d, 3);
     auto data = AllocateAligned<T>(N);
     auto lzcnt = AllocateAligned<T>(N);
     HWY_ASSERT(data && lzcnt);
 
     constexpr T kNumOfBitsInT = static_cast<T>(sizeof(T) * 8);
     for (size_t j = 0; j < N; j++) {
-      if (j<3){
+      if (j < 3) {
         lzcnt[j] = static_cast<T>(kNumOfBitsInT - 2);
       } else {
         lzcnt[j] = static_cast<T>(0);
       }
     }
-    HWY_ASSERT_VEC_EQ(d, lzcnt.get(),
-                      MaskedLeadingZeroCountOrZero(first_3, Set(d, static_cast<T>(2))));
+    HWY_ASSERT_VEC_EQ(
+        d, lzcnt.get(),
+        MaskedLeadingZeroCountOrZero(first_3, Set(d, static_cast<T>(2))));
 
     for (size_t j = 0; j < N; j++) {
-      if (j<3) {
+      if (j < 3) {
         lzcnt[j] = static_cast<T>(1);
       } else {
         lzcnt[j] = static_cast<T>(0);
@@ -163,7 +164,8 @@ struct TestMaskedLeadingZeroCount {
     }
     HWY_ASSERT_VEC_EQ(
         d, lzcnt.get(),
-        MaskedLeadingZeroCountOrZero(first_3, BitCast(d, Set(du, TU{1} << (kNumOfBitsInT - 2)))));
+        MaskedLeadingZeroCountOrZero(
+            first_3, BitCast(d, Set(du, TU{1} << (kNumOfBitsInT - 2)))));
   }
 };
 

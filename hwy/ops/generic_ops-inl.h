@@ -100,14 +100,14 @@ HWY_API Vec<D> Inf(D d) {
 // ------------------------------ SetOr/SetOrZero
 
 template <class V, typename T = TFromV<V>, typename D = DFromV<V>,
-         typename M = MFromD<D>>
+          typename M = MFromD<D>>
 HWY_API V SetOr(V no, M m, T a) {
   D d;
   return IfThenElse(m, Set(d, a), no);
 }
 
 template <class D, typename V = VFromD<D>, typename M = MFromD<D>,
-         typename T = TFromD<D>>
+          typename T = TFromD<D>>
 HWY_API V SetOrZero(D d, M m, T a) {
   return IfThenElseZero(m, Set(d, a));
 }
@@ -361,9 +361,9 @@ HWY_API Mask<DTo> DemoteMaskTo(DTo d_to, DFrom d_from, Mask<DFrom> m) {
 template <class D, typename T, class V = VFromD<D>(), HWY_IF_LANES_GT_D(D, 1)>
 HWY_API V LoadHigher(D d, V a, T* p) {
   const V b = LoadU(d, p);
-  return ConcatLowerLower(d, b,a);
+  return ConcatLowerLower(d, b, a);
 }
-#endif // HWY_NATIVE_LOAD_HIGHER
+#endif  // HWY_NATIVE_LOAD_HIGHER
 
 // ------------------------------ CombineMasks
 #if (defined(HWY_NATIVE_COMBINE_MASKS) == defined(HWY_TARGET_TOGGLE))
@@ -576,11 +576,11 @@ HWY_API V AddSub(V a, V b) {
 template <class V>
 HWY_API V MulLower(V a, V b) {
   const DFromV<V> d;
-  const auto first_mask = FirstN(d,1);
+  const auto first_mask = FirstN(d, 1);
   return MaskedMulOr(a, first_mask, a, b);
 }
 
-#endif // HWY_NATIVE_MUL_LOWER
+#endif  // HWY_NATIVE_MUL_LOWER
 
 // ------------------------------ MaskedAddOr etc.
 #if (defined(HWY_NATIVE_MASKED_ARITH) == defined(HWY_TARGET_TOGGLE))
@@ -688,7 +688,8 @@ HWY_API V MaskedNegMulAddOrZero(M m, V mul, V x, V add) {
   return IfThenElseZero(m, NegMulAdd(mul, x, add));
 }
 
-template <class D, class M, HWY_IF_UI32_D(D), class V16 = VFromD<RepartitionToNarrow<D>>>
+template <class D, class M, HWY_IF_UI32_D(D),
+          class V16 = VFromD<RepartitionToNarrow<D>>>
 HWY_API VFromD<D> MaskedWidenMulPairwiseAddOrZero(D d32, M m, V16 a, V16 b) {
   return IfThenElseZero(m, WidenMulPairwiseAdd(d32, a, b));
 }
@@ -1399,7 +1400,7 @@ HWY_API V GetExponent(V v) {
 // ------------------------------ MaskedLoadU
 template <class D, class M>
 HWY_API VFromD<D> MaskedLoadU(D d, M m,
-                            const TFromD<D>* HWY_RESTRICT unaligned) {
+                              const TFromD<D>* HWY_RESTRICT unaligned) {
   return IfThenElseZero(m, LoadU(d, unaligned));
 }
 
@@ -2276,7 +2277,6 @@ HWY_API void StoreInterleaved4(VFromD<D> part0, VFromD<D> part1,
 
 #endif  // HWY_NATIVE_LOAD_STORE_INTERLEAVED
 
-
 // ------------------------------ PairwiseAdd/PairwiseSub
 #if (defined(HWY_NATIVE_PAIRWISE_ADD) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_PAIRWISE_ADD
@@ -2322,18 +2322,18 @@ using IndicesFromD = decltype(IndicesFromVec(D(), Zero(RebindToUnsigned<D>())));
 // Interleaved 64 bits of a[0]+a[1], a[2]+a[3], ...
 //         and 64 bits of b[0]+b[1], b[2]+b[3], ... and so on
 template <typename V, typename D = DFromV<V>, typename T = TFromD<D>,
-         const size_t N=HWY_LANES(T)>
+          const size_t N = HWY_LANES(T)>
 constexpr IndicesFromD<D> Pairwise128Indices(D d) {
   const size_t block_len = 8 / sizeof(T);
   const size_t n_blocks = N / block_len;
   TFromD<RebindToUnsigned<D>> indices[N] = {0};
 
   TFromD<RebindToUnsigned<D>> even = 0, odd = 1;
-  for (size_t block = 0;block < n_blocks; block += 2) {
-    for(size_t index = 0; index < block_len; ++index, even += 2) {
+  for (size_t block = 0; block < n_blocks; block += 2) {
+    for (size_t index = 0; index < block_len; ++index, even += 2) {
       indices[block * block_len + index] = even;
     }
-    for(size_t index = 0; index < block_len; ++index, odd += 2) {
+    for (size_t index = 0; index < block_len; ++index, odd += 2) {
       indices[(block + 1) * block_len + index] = odd;
     }
   }
@@ -2945,18 +2945,16 @@ HWY_API void StoreN(VFromD<D> v, D d, T* HWY_RESTRICT p,
 #define HWY_NATIVE_STORE_TRUNCATED
 #endif
 
-
 template <class DFrom, class To, class DTo = Rebind<To, DFrom>,
           HWY_IF_T_SIZE_GT_D(DFrom, sizeof(To)),
           HWY_IF_NOT_FLOAT_NOR_SPECIAL_V(VFromD<DFrom>)>
 HWY_API void StoreTruncated(VFromD<DFrom> v, const DFrom d,
-    To * HWY_RESTRICT p) {
+                            To* HWY_RESTRICT p) {
   DTo dsmall;
   StoreN(TruncateTo(dsmall, v), dsmall, p, Lanes(d));
 }
 
 #endif  // (defined(HWY_NATIVE_STORE_TRUNCATED) == defined(HWY_TARGET_TOGGLE))
-
 
 // ------------------------------ Scatter
 
@@ -3743,16 +3741,16 @@ template <class D32, HWY_IF_UI32_D(D32)>
 HWY_API VFromD<D32> DemoteCeilTo(D32 d32, VFromD<Rebind<double, D32>> v) {
   return DemoteTo(d32, Ceil(v));
 }
-#endif // HWY_HAVE_FLOAT64
+#endif  // HWY_HAVE_FLOAT64
 
 #if HWY_HAVE_FLOAT16
 template <class D16, HWY_IF_F16_D(D16)>
 HWY_API VFromD<D16> DemoteCeilTo(D16 d16, VFromD<Rebind<float, D16>> v) {
   return DemoteTo(d16, Ceil(v));
 }
-#endif // HWY_HAVE_FLOAT16
+#endif  // HWY_HAVE_FLOAT16
 
-#endif //HWY_NATIVE_DEMOTE_CEIL_TO
+#endif  // HWY_NATIVE_DEMOTE_CEIL_TO
 
 #if (defined(HWY_NATIVE_DEMOTE_FLOOR_TO) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_DEMOTE_FLOOR_TO
@@ -3766,16 +3764,16 @@ template <class D32, HWY_IF_UI32_D(D32)>
 HWY_API VFromD<D32> DemoteFloorTo(D32 d32, VFromD<Rebind<double, D32>> v) {
   return DemoteTo(d32, Floor(v));
 }
-#endif // HWY_HAVE_FLOAT64
+#endif  // HWY_HAVE_FLOAT64
 
 #if HWY_HAVE_FLOAT16
 template <class D16, HWY_IF_F16_D(D16)>
 HWY_API VFromD<D16> DemoteFloorTo(D16 d16, VFromD<Rebind<float, D16>> v) {
   return DemoteTo(d16, Floor(v));
 }
-#endif // HWY_HAVE_FLOAT16
+#endif  // HWY_HAVE_FLOAT16
 
-#endif //HWY_NATIVE_DEMOTE_FLOOR_TO
+#endif  // HWY_NATIVE_DEMOTE_FLOOR_TO
 
 // ------------------------------ PromoteInRangeTo
 #if (defined(HWY_NATIVE_F32_TO_UI64_PROMOTE_IN_RANGE_TO) == \
@@ -4271,7 +4269,8 @@ HWY_API V TrailingZeroCount(V v) {
 #endif  // HWY_NATIVE_LEADING_ZERO_COUNT
 
 // ------------------------------ MaskedLeadingZeroCountOrZero
-#if (defined(HWY_NATIVE_MASKED_LEADING_ZERO_COUNT) == defined(HWY_TARGET_TOGGLE))
+#if (defined(HWY_NATIVE_MASKED_LEADING_ZERO_COUNT) == \
+     defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
 #undef HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
 #else
@@ -4282,7 +4281,7 @@ template <class V, HWY_IF_NOT_FLOAT_NOR_SPECIAL_V(V), class M>
 HWY_API V MaskedLeadingZeroCountOrZero(M m, V v) {
   return IfThenElseZero(m, LeadingZeroCount(v));
 }
-#endif // HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+#endif  // HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
 
 // ------------------------------ AESRound
 
@@ -4802,7 +4801,7 @@ HWY_API V MulAddLower(const V a, const V b, const V c) {
   return IfThenElse(LowerMask, MulAdd(a, b, c), a);
 }
 
-#endif // HWY_NATIVE_MUL_ADD_LOWER
+#endif  // HWY_NATIVE_MUL_ADD_LOWER
 
 // ------------------------------ MulCplx* / MaskedMulCplx*
 
@@ -5792,12 +5791,12 @@ HWY_API VFromD<DI32> SatWidenMulAccumFixedPoint(DI32 di32,
 template <class V, HWY_IF_FLOAT_V(V)>
 HWY_API V SqrtLower(V a) {
   const DFromV<V> d;
-  const auto first_mask = FirstN(d,1);
+  const auto first_mask = FirstN(d, 1);
   return IfThenElse(first_mask, Sqrt(a), a);
 }
 
 #undef HWY_SVE_SQRT_LOWER
-#endif // HWY_NATIVE_SQRT_LOWER
+#endif  // HWY_NATIVE_SQRT_LOWER
 
 // ------------------------------ MaskedSqrtOrZero
 template <class V, HWY_IF_FLOAT_V(V), class M>
@@ -5991,7 +5990,7 @@ HWY_API V ApproximateReciprocal(V v) {
 
 // ------------------------------ MaskedApproximateReciprocalOrZero
 template <class V, HWY_IF_FLOAT_V(V), class M>
-HWY_API V MaskedApproximateReciprocalOrZero(M m,V v) {
+HWY_API V MaskedApproximateReciprocalOrZero(M m, V v) {
   return IfThenElseZero(m, ApproximateReciprocal(v));
 }
 
@@ -6022,7 +6021,7 @@ HWY_API V ApproximateReciprocalSqrt(V v) {
 
 // ------------------------------ MaskedApproximateReciprocalSqrtOrZero
 template <class V, HWY_IF_FLOAT_V(V), class M>
-HWY_API V MaskedApproximateReciprocalSqrtOrZero(M m,V v) {
+HWY_API V MaskedApproximateReciprocalSqrtOrZero(M m, V v) {
   return IfThenElseZero(m, ApproximateReciprocalSqrt(v));
 }
 
@@ -7979,27 +7978,34 @@ HWY_API V MultiShift(V v, VI idx) {
   // Calculate even lanes
   const auto even_src = DupEven(v);
   // Expand indexes to pull out 16 bit segments of idx and idx + 1
-  const auto even_idx = InterleaveLower(byte_idx, Add(byte_idx, Set(du8, uint8_t{1})));
+  const auto even_idx =
+      InterleaveLower(byte_idx, Add(byte_idx, Set(du8, uint8_t{1})));
   // TableLookupBytes indexes select from within a 16 byte block
   const auto even_segments = TableLookupBytes(even_src, even_idx);
   // Extract unaligned bytes from 16 bit segments
   const auto even_idx_shift = ZipLower(idx_shift, Zero(du8));
-  const auto extracted_even_bytes = Shr(BitCast(du16, even_segments), even_idx_shift);
+  const auto extracted_even_bytes =
+      Shr(BitCast(du16, even_segments), even_idx_shift);
 
   // Calculate odd lanes
   const auto odd_src = DupOdd(v);
   // Expand indexes to pull out 16 bit segments of idx and idx + 1
-  const auto odd_idx = InterleaveUpper(du8, byte_idx, Add(byte_idx, Set(du8, uint8_t{1})));
+  const auto odd_idx =
+      InterleaveUpper(du8, byte_idx, Add(byte_idx, Set(du8, uint8_t{1})));
   // TableLookupBytes indexes select from within a 16 byte block
   const auto odd_segments = TableLookupBytes(odd_src, odd_idx);
   // Extract unaligned bytes from 16 bit segments
   const auto odd_idx_shift = ZipUpper(du16, idx_shift, Zero(du8));
-  const auto extracted_odd_bytes = Shr(BitCast(du16, odd_segments), odd_idx_shift);
+  const auto extracted_odd_bytes =
+      Shr(BitCast(du16, odd_segments), odd_idx_shift);
 
   // Extract the even bytes of each 128 bit block and pack into lower 64 bits
-  const auto extract_mask = Dup128VecFromValues(du8, 0, 2, 4, 6, 8, 10, 12, 14, 0, 0, 0, 0, 0, 0, 0, 0);
-  const auto even_lanes = BitCast(d64, TableLookupBytes(extracted_even_bytes, extract_mask));
-  const auto odd_lanes = BitCast(d64, TableLookupBytes(extracted_odd_bytes, extract_mask));
+  const auto extract_mask = Dup128VecFromValues(du8, 0, 2, 4, 6, 8, 10, 12, 14,
+                                                0, 0, 0, 0, 0, 0, 0, 0);
+  const auto even_lanes =
+      BitCast(d64, TableLookupBytes(extracted_even_bytes, extract_mask));
+  const auto odd_lanes =
+      BitCast(d64, TableLookupBytes(extracted_odd_bytes, extract_mask));
   // Interleave at 64 bit level
   return InterleaveLower(even_lanes, odd_lanes);
 }
@@ -8044,7 +8050,6 @@ template <class V, class M>
 HWY_API V MaskedOrOrZero(M m, V a, V b) {
   return IfThenElseZero(m, Or(a, b));
 }
-
 
 // ================================================== Operator wrapper
 

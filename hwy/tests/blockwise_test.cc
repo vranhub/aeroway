@@ -288,14 +288,15 @@ struct TestMaskedInterleaveEven {
     const auto odd = Load(d, odd_lanes.get());
 
     for (size_t i = 0; i < N; ++i) {
-      if (i<3) {
+      if (i < 3) {
         expected[i] = ConvertScalarTo<T>(2 * i - (i & 1));
       } else {
         expected[i] = ConvertScalarTo<T>(0);
       }
     }
 
-    HWY_ASSERT_VEC_EQ(d, expected.get(), InterleaveEvenOrZero(first_3, even, odd));
+    HWY_ASSERT_VEC_EQ(d, expected.get(),
+                      InterleaveEvenOrZero(first_3, even, odd));
   }
 };
 
@@ -316,14 +317,15 @@ struct TestMaskedInterleaveOdd {
     const auto odd = Load(d, odd_lanes.get());
 
     for (size_t i = 0; i < N; ++i) {
-      if (i<3) {
+      if (i < 3) {
         expected[i] = ConvertScalarTo<T>((2 * i) - (i & 1) + 2);
       } else {
         expected[i] = ConvertScalarTo<T>(0);
       }
     }
 
-    HWY_ASSERT_VEC_EQ(d, expected.get(), InterleaveOddOrZero(first_3, even, odd));
+    HWY_ASSERT_VEC_EQ(d, expected.get(),
+                      InterleaveOddOrZero(first_3, even, odd));
   }
 };
 

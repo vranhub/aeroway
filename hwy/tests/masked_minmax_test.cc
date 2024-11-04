@@ -136,7 +136,6 @@ HWY_NOINLINE void TestAllSignedMinMax() {
   ForFloatTypes(ForPartialVectors<TestSignedMinMax>());
 }
 
-
 struct TestMaskedMaxOrZero {
   template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
@@ -151,10 +150,9 @@ struct TestMaskedMaxOrZero {
 
     const Vec<D> v1_exp = IfThenElse(first_five, v2, v0);
 
-    auto output =  MaskedMaxOrZero(first_five, v1, v2);
+    auto output = MaskedMaxOrZero(first_five, v1, v2);
 
     HWY_ASSERT_VEC_EQ(d, v1_exp, output);
-
   }
 };
 

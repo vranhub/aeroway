@@ -564,11 +564,12 @@ struct TestSetOr {
     // All True
     testWithMask(d, FirstN(d, N));
     // Lower half
-    testWithMask(d, FirstN(d, N/2));
+    testWithMask(d, FirstN(d, N / 2));
     // Upper half
-    testWithMask(d, Not(FirstN(d, N/2)));
+    testWithMask(d, Not(FirstN(d, N / 2)));
     // Interleaved
-    testWithMask(d, MaskFromVec(InterleaveLower(Zero(d), Set(d, (TFromD<D>)-1))));
+    testWithMask(d,
+                 MaskFromVec(InterleaveLower(Zero(d), Set(d, (TFromD<D>)-1))));
   }
 };
 
@@ -594,11 +595,12 @@ struct TestSetOrZero {
     // All True
     testWithMask(d, FirstN(d, N));
     // Lower half
-    testWithMask(d, FirstN(d, N/2));
+    testWithMask(d, FirstN(d, N / 2));
     // Upper half
-    testWithMask(d, Not(FirstN(d, N/2)));
+    testWithMask(d, Not(FirstN(d, N / 2)));
     // Interleaved
-    testWithMask(d, MaskFromVec(InterleaveLower(Zero(d), Set(d, (TFromD<D>)-1))));
+    testWithMask(d,
+                 MaskFromVec(InterleaveLower(Zero(d), Set(d, (TFromD<D>)-1))));
   }
 };
 

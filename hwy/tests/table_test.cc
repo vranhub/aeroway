@@ -104,14 +104,15 @@ HWY_NOINLINE void TestAllTableLookupLanes() {
 
 struct TestTableLookupLanesOr {
   template <class T, class D>
-  #if HWY_TARGET != HWY_SCALARWE
+#if HWY_TARGET != HWY_SCALARWE
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
     const RebindToSigned<D> di;
     using TI = TFromD<decltype(di)>;
 
     const size_t N = Lanes(d);
     // Select indices from N-1 counting down
-    auto indices = IndicesFromVec(d, Sub(Set(di, ConvertScalarTo<TI>(N - 1)), Iota(di, 0)));
+    auto indices = IndicesFromVec(
+        d, Sub(Set(di, ConvertScalarTo<TI>(N - 1)), Iota(di, 0)));
 
     auto expected = AllocateAligned<T>(N);
     auto expected_zero = AllocateAligned<T>(N);
@@ -124,12 +125,13 @@ struct TestTableLookupLanesOr {
     RandomState rng;
 
     for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
-      for (size_t i=0; i < N; ++i) {
+      for (size_t i = 0; i < N; ++i) {
         bool_lanes[i] = (Random32(&rng) & 1024) ? T(1) : T(0);
 
         if (bool_lanes[i]) {
           expected[i] = ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
-          expected_zero[i] = ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
+          expected_zero[i] =
+              ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
         } else {
           expected[i] = ConvertScalarTo<T>(i + 8);  // v2[i]
           expected_zero[i] = ConvertScalarTo(0);
@@ -138,11 +140,13 @@ struct TestTableLookupLanesOr {
 
       const Vec<D> mask_i = Load(d, bool_lanes.get());
       const Mask<D> mask = RebindMask(d, Gt(mask_i, Zero(d)));
-      HWY_ASSERT_VEC_EQ(d, expected.get(), TableLookupLanesOr(mask, v1, v2, indices));
-      HWY_ASSERT_VEC_EQ(d, expected_zero.get(), TableLookupLanesOrZero(mask, v1, indices));
-  #else
-    (void)d;
-  #endif
+      HWY_ASSERT_VEC_EQ(d, expected.get(),
+                        TableLookupLanesOr(mask, v1, v2, indices));
+      HWY_ASSERT_VEC_EQ(d, expected_zero.get(),
+                        TableLookupLanesOrZero(mask, v1, indices));
+#else
+  (void) d;
+#endif
     }
   }
 };
@@ -265,16 +269,20 @@ struct TestTwoTablesLookupLanesOr {
     RandomState rng;
 
     for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
-      for (size_t i=0; i < N; ++i) {
+      for (size_t i = 0; i < N; ++i) {
         bool_lanes[i] = (Random32(&rng) & 1024) ? T(1) : T(0);
 
         if (bool_lanes[i]) {
           if (i % 2) {
-            expected[i] = ConvertScalarTo<T>(N - i + 8 - 1);  // v2[N-1, N-2, ...]
-            expected_zero[i] = ConvertScalarTo<T>(N - i + 8 - 1);  // v2[N-1, N-2, ...]
+            expected[i] =
+                ConvertScalarTo<T>(N - i + 8 - 1);  // v2[N-1, N-2, ...]
+            expected_zero[i] =
+                ConvertScalarTo<T>(N - i + 8 - 1);  // v2[N-1, N-2, ...]
           } else {
-            expected[i] = ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
-            expected_zero[i] = ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
+            expected[i] =
+                ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
+            expected_zero[i] =
+                ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
           }
         } else {
           expected[i] = ConvertScalarTo<T>(i + 5);  // v1[i]
@@ -284,8 +292,10 @@ struct TestTwoTablesLookupLanesOr {
 
       const Vec<D> mask_i = Load(d, bool_lanes.get());
       const Mask<D> mask = RebindMask(d, Gt(mask_i, Zero(d)));
-      HWY_ASSERT_VEC_EQ(d, expected.get(), TwoTablesLookupLanesOr(d, mask, v1, v2, indices));
-      HWY_ASSERT_VEC_EQ(d, expected_zero.get(), TwoTablesLookupLanesOrZero(d, mask, v1, v2, indices));
+      HWY_ASSERT_VEC_EQ(d, expected.get(),
+                        TwoTablesLookupLanesOr(d, mask, v1, v2, indices));
+      HWY_ASSERT_VEC_EQ(d, expected_zero.get(),
+                        TwoTablesLookupLanesOrZero(d, mask, v1, v2, indices));
     }
   }
 };

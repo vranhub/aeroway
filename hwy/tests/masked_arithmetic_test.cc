@@ -391,11 +391,11 @@ struct TestMulLower {
     const size_t N = Lanes(d);
     auto expected = AllocateAligned<T>(N);
 
-    for(size_t i = 0; i < N; ++i) {
-      if (i==0) {
-        expected[i] = ConvertScalarTo<T>(2*3);
+    for (size_t i = 0; i < N; ++i) {
+      if (i == 0) {
+        expected[i] = ConvertScalarTo<T>(2 * 3);
       } else {
-        expected[i] = ConvertScalarTo<T>(i+2);
+        expected[i] = ConvertScalarTo<T>(i + 2);
       }
     }
 
@@ -435,8 +435,9 @@ struct TestMulAddLower {
   }
 };
 
-HWY_NOINLINE void TestAllTestMulAddLower() { ForAllTypes(ForPartialVectors<TestMulAddLower>()); }
-
+HWY_NOINLINE void TestAllTestMulAddLower() {
+  ForAllTypes(ForPartialVectors<TestMulAddLower>());
+}
 
 struct TestAddSubMulOrZero {
   template <class T, class D>
@@ -523,23 +524,33 @@ struct TestUnsignedSatAddSubOrZero {
 
       Vec<D> expected_add =
           IfThenElse(mask, Set(d, static_cast<T>(0)), disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_add, MaskedSaturatedAddOrZero(mask, v0, v0));
+      HWY_ASSERT_VEC_EQ(d, expected_add,
+                        MaskedSaturatedAddOrZero(mask, v0, v0));
       expected_add = IfThenElse(mask, vi, disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_add, MaskedSaturatedAddOrZero(mask, v0, vi));
+      HWY_ASSERT_VEC_EQ(d, expected_add,
+                        MaskedSaturatedAddOrZero(mask, v0, vi));
       expected_add = IfThenElse(mask, Set(d, static_cast<T>(LimitsMax<T>())),
                                 disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_add, MaskedSaturatedAddOrZero(mask, v0, vm));
-      HWY_ASSERT_VEC_EQ(d, expected_add, MaskedSaturatedAddOrZero(mask, vi, vm));
-      HWY_ASSERT_VEC_EQ(d, expected_add, MaskedSaturatedAddOrZero(mask, vm, vm));
+      HWY_ASSERT_VEC_EQ(d, expected_add,
+                        MaskedSaturatedAddOrZero(mask, v0, vm));
+      HWY_ASSERT_VEC_EQ(d, expected_add,
+                        MaskedSaturatedAddOrZero(mask, vi, vm));
+      HWY_ASSERT_VEC_EQ(d, expected_add,
+                        MaskedSaturatedAddOrZero(mask, vm, vm));
 
       Vec<D> expected_sub =
           IfThenElse(mask, Set(d, static_cast<T>(0)), disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_sub, MaskedSaturatedSubOrZero(mask, v0, v0));
-      HWY_ASSERT_VEC_EQ(d, expected_sub, MaskedSaturatedSubOrZero(mask, v0, vi));
-      HWY_ASSERT_VEC_EQ(d, expected_sub, MaskedSaturatedSubOrZero(mask, vi, vi));
-      HWY_ASSERT_VEC_EQ(d, expected_sub, MaskedSaturatedSubOrZero(mask, vi, vm));
+      HWY_ASSERT_VEC_EQ(d, expected_sub,
+                        MaskedSaturatedSubOrZero(mask, v0, v0));
+      HWY_ASSERT_VEC_EQ(d, expected_sub,
+                        MaskedSaturatedSubOrZero(mask, v0, vi));
+      HWY_ASSERT_VEC_EQ(d, expected_sub,
+                        MaskedSaturatedSubOrZero(mask, vi, vi));
+      HWY_ASSERT_VEC_EQ(d, expected_sub,
+                        MaskedSaturatedSubOrZero(mask, vi, vm));
       expected_sub = IfThenElse(mask, Sub(vm, vi), disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_sub, MaskedSaturatedSubOrZero(mask, vm, vi));
+      HWY_ASSERT_VEC_EQ(d, expected_sub,
+                        MaskedSaturatedSubOrZero(mask, vm, vi));
     }
   }
 };
@@ -573,23 +584,33 @@ struct TestSignedSatAddSubOrZero {
       const Vec<D> disabled_lane_val = Zero(d);
 
       Vec<D> expected_add = IfThenElse(mask, v0, disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_add, MaskedSaturatedAddOrZero(mask, v0, v0));
+      HWY_ASSERT_VEC_EQ(d, expected_add,
+                        MaskedSaturatedAddOrZero(mask, v0, v0));
       expected_add = IfThenElse(mask, vi, disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_add, MaskedSaturatedAddOrZero(mask, v0, vi));
+      HWY_ASSERT_VEC_EQ(d, expected_add,
+                        MaskedSaturatedAddOrZero(mask, v0, vi));
       expected_add = IfThenElse(mask, vpm, disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_add, MaskedSaturatedAddOrZero(mask, v0, vpm));
-      HWY_ASSERT_VEC_EQ(d, expected_add, MaskedSaturatedAddOrZero(mask, vi, vpm));
-      HWY_ASSERT_VEC_EQ(d, expected_add, MaskedSaturatedAddOrZero(mask, vpm, vpm));
+      HWY_ASSERT_VEC_EQ(d, expected_add,
+                        MaskedSaturatedAddOrZero(mask, v0, vpm));
+      HWY_ASSERT_VEC_EQ(d, expected_add,
+                        MaskedSaturatedAddOrZero(mask, vi, vpm));
+      HWY_ASSERT_VEC_EQ(d, expected_add,
+                        MaskedSaturatedAddOrZero(mask, vpm, vpm));
 
       Vec<D> expected_sub = IfThenElse(mask, v0, disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_sub, MaskedSaturatedSubOrZero(mask, v0, v0));
+      HWY_ASSERT_VEC_EQ(d, expected_sub,
+                        MaskedSaturatedSubOrZero(mask, v0, v0));
       expected_sub = IfThenElse(mask, Sub(v0, vi), disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_sub, MaskedSaturatedSubOrZero(mask, v0, vi));
+      HWY_ASSERT_VEC_EQ(d, expected_sub,
+                        MaskedSaturatedSubOrZero(mask, v0, vi));
       expected_sub = IfThenElse(mask, vn, disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_sub, MaskedSaturatedSubOrZero(mask, vn, v0));
+      HWY_ASSERT_VEC_EQ(d, expected_sub,
+                        MaskedSaturatedSubOrZero(mask, vn, v0));
       expected_sub = IfThenElse(mask, vnm, disabled_lane_val);
-      HWY_ASSERT_VEC_EQ(d, expected_sub, MaskedSaturatedSubOrZero(mask, vnm, vi));
-      HWY_ASSERT_VEC_EQ(d, expected_sub, MaskedSaturatedSubOrZero(mask, vnm, vpm));
+      HWY_ASSERT_VEC_EQ(d, expected_sub,
+                        MaskedSaturatedSubOrZero(mask, vnm, vi));
+      HWY_ASSERT_VEC_EQ(d, expected_sub,
+                        MaskedSaturatedSubOrZero(mask, vnm, vpm));
     }
   }
 };
@@ -647,22 +668,23 @@ struct TestIntegerDivOrZero {
   template <class D, HWY_IF_SIGNED_D(D)>
   static HWY_INLINE void DoSignedDivModTests(
       D d, const TFromD<D>* HWY_RESTRICT expected_quot,
-      const TFromD<D>* HWY_RESTRICT neg_expected_quot,
-      Mask<D> mask, Vec<D> va, Vec<D> vb) {
-
+      const TFromD<D>* HWY_RESTRICT neg_expected_quot, Mask<D> mask, Vec<D> va,
+      Vec<D> vb) {
     const auto neg_a = Neg(va);
     const auto neg_b = Neg(vb);
 
-    HWY_ASSERT_VEC_EQ(d, neg_expected_quot, MaskedDivideOrZero(mask, neg_a, vb));
-    HWY_ASSERT_VEC_EQ(d, neg_expected_quot, MaskedDivideOrZero(mask, va, neg_b));
+    HWY_ASSERT_VEC_EQ(d, neg_expected_quot,
+                      MaskedDivideOrZero(mask, neg_a, vb));
+    HWY_ASSERT_VEC_EQ(d, neg_expected_quot,
+                      MaskedDivideOrZero(mask, va, neg_b));
     HWY_ASSERT_VEC_EQ(d, expected_quot, MaskedDivideOrZero(mask, neg_a, neg_b));
   }
 
   template <class D, HWY_IF_UNSIGNED_D(D)>
   static HWY_INLINE void DoSignedDivModTests(
       D /*d*/, const TFromD<D>* HWY_RESTRICT /*expected_quot*/,
-      const TFromD<D>* HWY_RESTRICT /*neg_expected_quot*/,
-      Mask<D> /*mask*/, Vec<D> /*va*/, Vec<D> /*vb*/) {}
+      const TFromD<D>* HWY_RESTRICT /*neg_expected_quot*/, Mask<D> /*mask*/,
+      Vec<D> /*va*/, Vec<D> /*vb*/) {}
 
   template <typename T, class D>
   HWY_NOINLINE void operator()(T /*unused*/, D d) {
@@ -725,9 +747,10 @@ struct TestIntegerDivOrZero {
       const VI mask_i = Load(di, bool_lanes.get());
       const Mask<D> mask = RebindMask(d, Gt(mask_i, Zero(di)));
 
-      HWY_ASSERT_VEC_EQ(d, expected_quot.get(), MaskedDivideOrZero(mask, va, vb));
-      DoSignedDivModTests(d, expected_quot.get(), neg_expected_quot.get(),
-                          mask, va, vb);
+      HWY_ASSERT_VEC_EQ(d, expected_quot.get(),
+                        MaskedDivideOrZero(mask, va, vb));
+      DoSignedDivModTests(d, expected_quot.get(), neg_expected_quot.get(), mask,
+                          va, vb);
     }
   }
 };
@@ -761,11 +784,12 @@ struct TestMulFixedPoint15OrZero {
       for (size_t i = 0; i < N; ++i) {
         bool_lanes[i] = (Random32(&rng) & 1024) ? T(1) : T(0);
         if (bool_lanes[i]) {
-          // There are three ways to compute the results. x86 and Arm are defined
-          // using 32-bit multiplication results:
+          // There are three ways to compute the results. x86 and Arm are
+          // defined using 32-bit multiplication results:
           const int arm =
               static_cast<int32_t>(2u * static_cast<uint32_t>(in1[i] * in2[i]) +
-                                   0x8000u) >> 16;
+                                   0x8000u) >>
+              16;
           const int x86 = (((in1[i] * in2[i]) >> 14) + 1) >> 1;
           // On other platforms, split the result into upper and lower 16 bits.
           const auto v1 = Set(d, in1[i]);
@@ -788,7 +812,8 @@ struct TestMulFixedPoint15OrZero {
 
       const auto a = Load(d, in1.get());
       const auto b = Load(d, in2.get());
-      HWY_ASSERT_VEC_EQ(d, expected.get(), MaskedMulFixedPoint15OrZero(mask, a, b));
+      HWY_ASSERT_VEC_EQ(d, expected.get(),
+                        MaskedMulFixedPoint15OrZero(mask, a, b));
     }
   }
 };
@@ -836,8 +861,10 @@ struct TestMulAddOrZero {
 
     HWY_ASSERT_VEC_EQ(d, expected.get(), MaskedMulAddOrZero(mask, v2, v1, k0));
     HWY_ASSERT_VEC_EQ(d, expected.get(), MaskedMulAddOrZero(mask, v1, v2, k0));
-    HWY_ASSERT_VEC_EQ(d, expected.get(), MaskedNegMulAddOrZero(mask, neg_v2, v1, k0));
-    HWY_ASSERT_VEC_EQ(d, expected.get(), MaskedNegMulAddOrZero(mask, v1, neg_v2, k0));
+    HWY_ASSERT_VEC_EQ(d, expected.get(),
+                      MaskedNegMulAddOrZero(mask, neg_v2, v1, k0));
+    HWY_ASSERT_VEC_EQ(d, expected.get(),
+                      MaskedNegMulAddOrZero(mask, v1, neg_v2, k0));
 
     for (size_t i = 0; i < N; ++i) {
       bool_lanes[i] = (Random32(&rng) & 1024) ? T(1) : T(0);
@@ -851,7 +878,8 @@ struct TestMulAddOrZero {
     mask = RebindMask(d, Gt(mask_i, Zero(d)));
 
     HWY_ASSERT_VEC_EQ(d, expected.get(), MaskedMulAddOrZero(mask, v2, v2, v1));
-    HWY_ASSERT_VEC_EQ(d, expected.get(), MaskedNegMulAddOrZero(mask, neg_v2, v2, v1));
+    HWY_ASSERT_VEC_EQ(d, expected.get(),
+                      MaskedNegMulAddOrZero(mask, neg_v2, v2, v1));
 
     for (size_t i = 0; i < N; ++i) {
       const T nm = ConvertScalarTo<T>(-static_cast<int>(i + 2));
@@ -867,7 +895,8 @@ struct TestMulAddOrZero {
     mask_i = Load(d, bool_lanes.get());
     mask = RebindMask(d, Gt(mask_i, Zero(d)));
 
-    HWY_ASSERT_VEC_EQ(d, expected.get(), MaskedNegMulAddOrZero(mask, v2, v2, v1));
+    HWY_ASSERT_VEC_EQ(d, expected.get(),
+                      MaskedNegMulAddOrZero(mask, v2, v2, v1));
   }
 };
 
@@ -892,9 +921,12 @@ struct TestWidenMulPairwiseAddOrZero {
     const VN bf1 = ReorderDemote2To(dn, f1, f1);
 
     // Any input zero => both outputs zero
-    HWY_ASSERT_VEC_EQ(dw, f0, MaskedWidenMulPairwiseAddOrZero(dw, MaskTrue(dw), bf0, bf0));
-    HWY_ASSERT_VEC_EQ(dw, f0, MaskedWidenMulPairwiseAddOrZero(dw, MaskTrue(dw), bf0, bf1));
-    HWY_ASSERT_VEC_EQ(dw, f0, MaskedWidenMulPairwiseAddOrZero(dw, MaskTrue(dw), bf1, bf0));
+    HWY_ASSERT_VEC_EQ(
+        dw, f0, MaskedWidenMulPairwiseAddOrZero(dw, MaskTrue(dw), bf0, bf0));
+    HWY_ASSERT_VEC_EQ(
+        dw, f0, MaskedWidenMulPairwiseAddOrZero(dw, MaskTrue(dw), bf0, bf1));
+    HWY_ASSERT_VEC_EQ(
+        dw, f0, MaskedWidenMulPairwiseAddOrZero(dw, MaskTrue(dw), bf1, bf0));
 
     auto expected = AllocateAligned<TW>(NN / 2);
     const auto v1l = Iota(dw, 1);
@@ -907,15 +939,19 @@ struct TestWidenMulPairwiseAddOrZero {
     const auto v2 = OrderedDemote2To(dn, v2l, v2h);
     HWY_ASSERT(expected);
     for (size_t p = 0; p < (NN / 2); ++p) {
-      auto a_odd = 2*p+1 + 1;  // a[2*p+1]
-      auto b_odd = 2*p+1 + 3;  // b[2*p+1]
-      auto a_even = 2*p+0 + 1;  // a[2*p+0]
-      auto b_even = 2*p+0 + 3;  // b[2*p+0]
+      auto a_odd = 2 * p + 1 + 1;   // a[2*p+1]
+      auto b_odd = 2 * p + 1 + 3;   // b[2*p+1]
+      auto a_even = 2 * p + 0 + 1;  // a[2*p+0]
+      auto b_even = 2 * p + 0 + 3;  // b[2*p+0]
       expected[p] = ConvertScalarTo<TW>(a_odd * b_odd + a_even * b_even);
     }
 
-    HWY_ASSERT_VEC_EQ(dw, expected.get(), MaskedWidenMulPairwiseAddOrZero(dw, MaskTrue(dw), v1, v2));
-    HWY_ASSERT_VEC_EQ(dw, expected.get(), MaskedWidenMulPairwiseAddOrZero(dw, MaskTrue(dw), v2, v1));
+    HWY_ASSERT_VEC_EQ(
+        dw, expected.get(),
+        MaskedWidenMulPairwiseAddOrZero(dw, MaskTrue(dw), v1, v2));
+    HWY_ASSERT_VEC_EQ(
+        dw, expected.get(),
+        MaskedWidenMulPairwiseAddOrZero(dw, MaskTrue(dw), v2, v1));
   }
 };
 
@@ -948,7 +984,8 @@ HWY_EXPORT_AND_TEST_P(HwyMaskedArithmeticTest, TestAllDivOrZero);
 HWY_EXPORT_AND_TEST_P(HwyMaskedArithmeticTest, TestAllIntegerDivOrZero);
 HWY_EXPORT_AND_TEST_P(HwyMaskedArithmeticTest, TestAllMulFixedPoint15OrZero);
 HWY_EXPORT_AND_TEST_P(HwyMaskedArithmeticTest, TestAllMulAddOrZero);
-HWY_EXPORT_AND_TEST_P(HwyMaskedArithmeticTest, TestAllWidenMulPairwiseAddOrZero);
+HWY_EXPORT_AND_TEST_P(HwyMaskedArithmeticTest,
+                      TestAllWidenMulPairwiseAddOrZero);
 HWY_AFTER_TEST();
 }  // namespace hwy
 
