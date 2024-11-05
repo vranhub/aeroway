@@ -97,6 +97,21 @@ HWY_API Vec<D> Inf(D d) {
   return BitCast(d, Set(du, max_x2 >> 1));
 }
 
+// ------------------------------ SetOr/SetOrZero
+
+template <class V, typename T = TFromV<V>, typename D = DFromV<V>,
+          typename M = MFromD<D>>
+HWY_API V SetOr(V no, M m, T a) {
+  D d;
+  return IfThenElse(m, Set(d, a), no);
+}
+
+template <class D, typename V = VFromD<D>, typename M = MFromD<D>,
+          typename T = TFromD<D>>
+HWY_API V SetOrZero(D d, M m, T a) {
+  return IfThenElseZero(m, Set(d, a));
+}
+
 // ------------------------------ ZeroExtendResizeBitCast
 
 // The implementation of detail::ZeroExtendResizeBitCast for the HWY_EMU128
@@ -336,8 +351,21 @@ HWY_API Mask<DTo> DemoteMaskTo(DTo d_to, DFrom d_from, Mask<DFrom> m) {
 
 #endif  // HWY_NATIVE_DEMOTE_MASK_TO
 
-// ------------------------------ CombineMasks
+// ------------------------------ LoadHigher
+#if (defined(HWY_NATIVE_LOAD_HIGHER) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_LOAD_HIGHER
+#undef HWY_NATIVE_LOAD_HIGHER
+#else
+#define HWY_NATIVE_LOAD_HIGHER
+#endif
+template <class D, typename T, class V = VFromD<D>(), HWY_IF_LANES_GT_D(D, 1)>
+HWY_API V LoadHigher(D d, V a, T* p) {
+  const V b = LoadU(d, p);
+  return ConcatLowerLower(d, b, a);
+}
+#endif  // HWY_NATIVE_LOAD_HIGHER
 
+// ------------------------------ CombineMasks
 #if (defined(HWY_NATIVE_COMBINE_MASKS) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_COMBINE_MASKS
 #undef HWY_NATIVE_COMBINE_MASKS
@@ -488,6 +516,24 @@ HWY_API V InterleaveEven(V a, V b) {
 }
 #endif
 
+// ------------------------------ InterleaveEvenOrZero
+
+#if HWY_TARGET != HWY_SCALAR || HWY_IDE
+template <class V, class M>
+HWY_API V InterleaveEvenOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, InterleaveEven(DFromV<V>(), a, b));
+}
+#endif
+
+// ------------------------------ InterleaveOddOrZero
+
+#if HWY_TARGET != HWY_SCALAR || HWY_IDE
+template <class V, class M>
+HWY_API V InterleaveOddOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, InterleaveOdd(DFromV<V>(), a, b));
+}
+#endif
+
 // ------------------------------ AddSub
 
 template <class V, HWY_IF_LANES_D(DFromV<V>, 1)>
@@ -519,6 +565,22 @@ HWY_API V AddSub(V a, V b) {
 
   return Add(a, negated_even_b);
 }
+
+#if (defined(HWY_NATIVE_MUL_LOWER) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MUL_LOWER
+#undef HWY_NATIVE_MUL_LOWER
+#else
+#define HWY_NATIVE_MUL_LOWER
+#endif
+
+template <class V>
+HWY_API V MulLower(V a, V b) {
+  const DFromV<V> d;
+  const auto first_mask = FirstN(d, 1);
+  return MaskedMulOr(a, first_mask, a, b);
+}
+
+#endif  // HWY_NATIVE_MUL_LOWER
 
 // ------------------------------ MaskedAddOr etc.
 #if (defined(HWY_NATIVE_MASKED_ARITH) == defined(HWY_TARGET_TOGGLE))
@@ -574,6 +636,144 @@ HWY_API V MaskedSatSubOr(V no, M m, V a, V b) {
 }
 #endif  // HWY_NATIVE_MASKED_ARITH
 
+#if (defined(HWY_NATIVE_ZERO_MASKED_ARITH) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_ZERO_MASKED_ARITH
+#undef HWY_NATIVE_ZERO_MASKED_ARITH
+#else
+#define HWY_NATIVE_ZERO_MASKED_ARITH
+#endif
+
+template <class V, class M>
+HWY_API V MaskedAddOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, Add(a, b));
+}
+
+template <class V, class M>
+HWY_API V MaskedSubOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, Sub(a, b));
+}
+
+template <class V, class M>
+HWY_API V MaskedMulOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, Mul(a, b));
+}
+
+template <class V, class M>
+HWY_API V MaskedDivideOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, Div(a, b));
+}
+
+template <class V, class M>
+HWY_API V MaskedSaturatedAddOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, SaturatedAdd(a, b));
+}
+
+template <class V, class M>
+HWY_API V MaskedSaturatedSubOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, SaturatedSub(a, b));
+}
+
+template <class V, class M, typename D = DFromV<V>, HWY_IF_I16_D(D)>
+HWY_API V MaskedMulFixedPoint15OrZero(M m, V a, V b) {
+  return IfThenElseZero(m, MulFixedPoint15(a, b));
+}
+
+template <class V, class M>
+HWY_API V MaskedMulAddOrZero(M m, V mul, V x, V add) {
+  return IfThenElseZero(m, MulAdd(mul, x, add));
+}
+
+template <class V, class M>
+HWY_API V MaskedNegMulAddOrZero(M m, V mul, V x, V add) {
+  return IfThenElseZero(m, NegMulAdd(mul, x, add));
+}
+
+template <class D, class M, HWY_IF_UI32_D(D),
+          class V16 = VFromD<RepartitionToNarrow<D>>>
+HWY_API VFromD<D> MaskedWidenMulPairwiseAddOrZero(D d32, M m, V16 a, V16 b) {
+  return IfThenElseZero(m, WidenMulPairwiseAdd(d32, a, b));
+}
+
+template <class DF, class M, HWY_IF_F32_D(DF), class VBF>
+HWY_API VFromD<DF> MaskedWidenMulPairwiseAddOrZero(DF df, M m, VBF a, VBF b) {
+  return IfThenElseZero(m, WidenMulPairwiseAdd(df, a, b));
+}
+#endif  // HWY_NATIVE_ZERO_MASKED_ARITH
+
+// ------------------------------ MaskedCompEq etc.
+#if (defined(HWY_NATIVE_MASKED_COMP) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MASKED_COMP
+#undef HWY_NATIVE_MASKED_COMP
+#else
+#define HWY_NATIVE_MASKED_COMP
+#endif
+
+template <class V, class M>
+HWY_API auto MaskedCompEq(M m, V a, V b) -> decltype(a == b) {
+  return And(m, Eq(a, b));
+}
+
+template <class V, class M>
+HWY_API auto MaskedCompNe(M m, V a, V b) -> decltype(a == b) {
+  return And(m, Ne(a, b));
+}
+
+template <class V, class M>
+HWY_API auto MaskedCompLt(M m, V a, V b) -> decltype(a == b) {
+  return And(m, Lt(a, b));
+}
+
+template <class V, class M>
+HWY_API auto MaskedCompGt(M m, V a, V b) -> decltype(a == b) {
+  return And(m, Gt(a, b));
+}
+
+template <class V, class M>
+HWY_API auto MaskedCompLe(M m, V a, V b) -> decltype(a == b) {
+  return And(m, Le(a, b));
+}
+
+template <class V, class M>
+HWY_API auto MaskedCompGe(M m, V a, V b) -> decltype(a == b) {
+  return And(m, Ge(a, b));
+}
+
+template <class V, class M, class D = DFromV<V>>
+HWY_API MFromD<D> MaskedIsInf(const M m, const V v) {
+  return And(m, IsInf(v));
+}
+
+template <class V, class M, class D = DFromV<V>>
+HWY_API MFromD<D> MaskedIsFinite(const M m, const V v) {
+  return And(m, IsFinite(v));
+}
+
+template <class V, class M, class D = DFromV<V>>
+HWY_API MFromD<D> MaskedIsNaN(const M m, const V v) {
+  return And(m, IsNaN(v));
+}
+#endif  // HWY_NATIVE_MASKED_COMP
+
+// ------------------------------ MaskedShift
+template <int kshift, class V, class M>
+HWY_API V MaskedShiftLeftOrZero(M m, V a) {
+  return IfThenElseZero(m, ShiftLeft<kshift>(a));
+}
+
+template <int kshift, class V, class M>
+HWY_API V MaskedShiftRightOrZero(M m, V a) {
+  return IfThenElseZero(m, ShiftRight<kshift>(a));
+}
+
+template <int kshift, class V, class M>
+HWY_API V MaskedShiftRightOr(V no, M m, V a) {
+  return IfThenElse(m, ShiftRight<kshift>(a), no);
+}
+
+template <class V, class M>
+HWY_API V MaskedShrOr(V no, M m, V a, V shifts) {
+  return IfThenElse(m, Shr(a, shifts), no);
+}
 // ------------------------------ IfNegativeThenNegOrUndefIfZero
 
 #if (defined(HWY_NATIVE_INTEGER_IF_NEGATIVE_THEN_NEG) == \
@@ -671,6 +871,18 @@ HWY_API V SaturatedAbs(V v) {
 }
 
 #endif
+
+// ------------------------------ MaskedAbsOr
+template <class V, HWY_IF_SIGNED_V(V), class M>
+HWY_API V MaskedAbsOr(M m, V v, V no) {
+  return IfThenElse(m, Abs(v), no);
+}
+
+// ------------------------------ MaskedAbsOrZero
+template <class V, HWY_IF_SIGNED_V(V), class M>
+HWY_API V MaskedAbsOrZero(M m, V v) {
+  return IfThenElseZero(m, Abs(v));
+}
 
 // ------------------------------ Reductions
 
@@ -882,6 +1094,28 @@ HWY_API TFromD<D> ReduceMax(D d, VFromD<D> v) {
 }
 #endif  // HWY_NATIVE_REDUCE_MINMAX_4_UI8
 
+#if (defined(HWY_NATIVE_MASKED_REDUCE_SCALAR) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MASKED_REDUCE_SCALAR
+#undef HWY_NATIVE_MASKED_REDUCE_SCALAR
+#else
+#define HWY_NATIVE_MASKED_REDUCE_SCALAR
+#endif
+
+template <class D, class M>
+HWY_API TFromD<D> MaskedReduceSum(D d, M m, VFromD<D> v) {
+  return ReduceSum(d, IfThenElseZero(m, v));
+}
+template <class D, class M>
+HWY_API TFromD<D> MaskedReduceMin(D d, M m, VFromD<D> v) {
+  return ReduceMin(d, IfThenElse(m, v, MaxOfLanes(d, v)));
+}
+template <class D, class M>
+HWY_API TFromD<D> MaskedReduceMax(D d, M m, VFromD<D> v) {
+  return ReduceMax(d, IfThenElseZero(m, v));
+}
+
+#endif  // HWY_NATIVE_MASKED_REDUCE_SCALAR
+
 // ------------------------------ IsEitherNaN
 #if (defined(HWY_NATIVE_IS_EITHER_NAN) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_IS_EITHER_NAN
@@ -969,6 +1203,22 @@ HWY_API VFromD<RebindToSigned<DFromV<V>>> FloorInt(V v) {
 }
 
 #endif  // HWY_NATIVE_CEIL_FLOOR_INT
+
+#if (defined(HWY_NATIVE_ADD_LOWER) == defined(HWY_TARGET_TOGGLE))
+
+// ------------------------------ Addlower
+#ifdef HWY_NATIVE_ADD_LOWER
+#undef HWY_NATIVE_ADD_LOWER
+#else
+#define HWY_NATIVE_ADD_LOWER
+#endif
+template <class V>
+HWY_API V AddLower(V a, V b) {
+  const DFromV<V> d;
+  const MFromD<DFromV<V>> LowerMask = FirstN(d, 1);
+  return IfThenElse(LowerMask, Add(a, b), a);
+}
+#endif
 
 // ------------------------------ MulByPow2/MulByFloorPow2
 
@@ -1117,6 +1367,42 @@ HWY_API V MulByFloorPow2(V v, V exp) {
 }
 
 #endif  // HWY_NATIVE_MUL_BY_POW2
+
+// ------------------------------ GetExponent
+
+#if (defined(HWY_NATIVE_GET_EXPONENT) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_GET_EXPONENT
+#undef HWY_NATIVE_GET_EXPONENT
+#else
+#define HWY_NATIVE_GET_EXPONENT
+#endif
+
+template <class V, HWY_IF_FLOAT_V(V)>
+HWY_API V GetExponent(V v) {
+  const DFromV<V> d;
+  using T = TFromV<V>;
+  const RebindToUnsigned<decltype(d)> du;
+  const RebindToSigned<decltype(d)> di;
+
+  constexpr uint8_t mantissa_bits = MantissaBits<T>();
+  const auto exponent_offset = Set(di, MaxExponentField<T>() >> 1);
+
+  // extract exponent bits as integer
+  const auto encoded_exponent = ShiftRight<mantissa_bits>(BitCast(du, Abs(v)));
+  const auto exponent_int = Sub(BitCast(di, encoded_exponent), exponent_offset);
+
+  // convert integer to original type
+  return ConvertTo(d, exponent_int);
+}
+
+#endif  // HWY_NATIVE_GET_EXPONENT
+
+// ------------------------------ MaskedLoadU
+template <class D, class M>
+HWY_API VFromD<D> MaskedLoadU(D d, M m,
+                              const TFromD<D>* HWY_RESTRICT unaligned) {
+  return IfThenElseZero(m, LoadU(d, unaligned));
+}
 
 // ------------------------------ LoadInterleaved2
 
@@ -1991,6 +2277,83 @@ HWY_API void StoreInterleaved4(VFromD<D> part0, VFromD<D> part1,
 
 #endif  // HWY_NATIVE_LOAD_STORE_INTERLEAVED
 
+// ------------------------------ PairwiseAdd/PairwiseSub
+#if (defined(HWY_NATIVE_PAIRWISE_ADD) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_PAIRWISE_ADD
+#undef HWY_NATIVE_PAIRWISE_ADD
+#else
+#define HWY_NATIVE_PAIRWISE_ADD
+#endif
+
+template <class D, class V = VFromD<D>(), HWY_IF_LANES_GT_D(D, 1)>
+HWY_API V PairwiseAdd(D d, V a, V b) {
+  return Add(InterleaveEven(d, a, b), InterleaveOdd(d, a, b));
+}
+
+#endif
+
+#if (defined(HWY_NATIVE_PAIRWISE_SUB) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_PAIRWISE_SUB
+#undef HWY_NATIVE_PAIRWISE_SUB
+#else
+#define HWY_NATIVE_PAIRWISE_SUB
+#endif
+
+template <class D, class V = VFromD<D>(), HWY_IF_LANES_GT_D(D, 1)>
+HWY_API V PairwiseSub(D d, V a, V b) {
+  return Sub(InterleaveOdd(d, a, b), InterleaveEven(d, a, b));
+}
+
+#endif
+
+#if (defined(HWY_NATIVE_PAIRWISE_ADD_128) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_PAIRWISE_ADD_128
+#undef HWY_NATIVE_PAIRWISE_ADD_128
+#else
+#define HWY_NATIVE_PAIRWISE_ADD_128
+#endif
+
+template <class D>
+using IndicesFromD = decltype(IndicesFromVec(D(), Zero(RebindToUnsigned<D>())));
+
+// Generate indices to convert
+// a[0]+a[1], b[0]+b[1], a[2]+a[3], b[2]+b[3] and so on
+// to
+// Interleaved 64 bits of a[0]+a[1], a[2]+a[3], ...
+//         and 64 bits of b[0]+b[1], b[2]+b[3], ... and so on
+template <typename V, typename D = DFromV<V>, typename T = TFromD<D>,
+          const size_t N = HWY_LANES(T)>
+constexpr IndicesFromD<D> Pairwise128Indices(D d) {
+  const size_t block_len = 8 / sizeof(T);
+  const size_t n_blocks = N / block_len;
+  TFromD<RebindToUnsigned<D>> indices[N] = {0};
+
+  TFromD<RebindToUnsigned<D>> even = 0, odd = 1;
+  for (size_t block = 0; block < n_blocks; block += 2) {
+    for (size_t index = 0; index < block_len; ++index, even += 2) {
+      indices[block * block_len + index] = even;
+    }
+    for (size_t index = 0; index < block_len; ++index, odd += 2) {
+      indices[(block + 1) * block_len + index] = odd;
+    }
+  }
+  return SetTableIndices(d, indices);
+}
+
+// Pairwise add with output in 128 bit blocks of a and b.
+template <class D, class V = VFromD<D>, HWY_IF_V_SIZE_GE_D(D, 16)>
+HWY_API V PairwiseAdd128(D d, V a, V b) {
+  return TableLookupLanes(PairwiseAdd(d, a, b), Pairwise128Indices<V>(d));
+}
+
+// Pairwise sub with output in 128 bit blocks of a and b.
+template <class D, class V = VFromD<D>, HWY_IF_V_SIZE_GE_D(D, 16)>
+HWY_API V PairwiseSub128(D d, V a, V b) {
+  return TableLookupLanes(PairwiseSub(d, a, b), Pairwise128Indices<V>(d));
+}
+
+#endif
+
 // Load/StoreInterleaved for special floats. Requires HWY_GENERIC_IF_EMULATED_D
 // is defined such that it is true only for types that actually require these
 // generic implementations.
@@ -2573,6 +2936,25 @@ HWY_API void StoreN(VFromD<D> v, D d, T* HWY_RESTRICT p,
 #endif  // HWY_MEM_OPS_MIGHT_FAULT && !HWY_HAVE_SCALABLE
 
 #endif  // (defined(HWY_NATIVE_STORE_N) == defined(HWY_TARGET_TOGGLE))
+
+// ------------------------------ StoreTruncated
+#if (defined(HWY_NATIVE_STORE_TRUNCATED) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_STORE_TRUNCATED
+#undef HWY_NATIVE_STORE_TRUNCATED
+#else
+#define HWY_NATIVE_STORE_TRUNCATED
+#endif
+
+template <class DFrom, class To, class DTo = Rebind<To, DFrom>,
+          HWY_IF_T_SIZE_GT_D(DFrom, sizeof(To)),
+          HWY_IF_NOT_FLOAT_NOR_SPECIAL_V(VFromD<DFrom>)>
+HWY_API void StoreTruncated(VFromD<DFrom> v, const DFrom d,
+                            To* HWY_RESTRICT p) {
+  DTo dsmall;
+  StoreN(TruncateTo(dsmall, v), dsmall, p, Lanes(d));
+}
+
+#endif  // (defined(HWY_NATIVE_STORE_TRUNCATED) == defined(HWY_TARGET_TOGGLE))
 
 // ------------------------------ Scatter
 
@@ -3200,6 +3582,19 @@ HWY_API VFromD<D> DemoteTo(D df16, VFromD<Rebind<float, D>> v) {
 
 #endif  // HWY_NATIVE_F16C
 
+// ------------------------------ PromoteTo F16->I
+#if HWY_HAVE_FLOAT16 || HWY_IDE
+template <class D, HWY_IF_NOT_FLOAT_D(D), HWY_IF_T_SIZE_D(D, sizeof(float))>
+HWY_API VFromD<D> PromoteTo(D d, VFromD<Rebind<float16_t, D>> v) {
+  return ConvertTo(d, PromoteTo(Rebind<float, D>(), v));
+}
+
+template <class D, HWY_IF_NOT_FLOAT_D(D), HWY_IF_T_SIZE_GT_D(D, sizeof(float))>
+HWY_API VFromD<D> PromoteTo(D d, VFromD<Rebind<float16_t, D>> v) {
+  return PromoteTo(d, PromoteTo(Rebind<float, D>(), v));
+}
+#endif
+
 // ------------------------------ F64->F16 DemoteTo
 #if (defined(HWY_NATIVE_DEMOTE_F64_TO_F16) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_DEMOTE_F64_TO_F16
@@ -3333,6 +3728,53 @@ HWY_API VFromD<D> ReorderDemote2To(D dbf16, VFromD<Repartition<float, D>> a,
 
 #endif  // HWY_NATIVE_DEMOTE_F32_TO_BF16
 
+// ------------------------------ DemoteTo (Alternate Rounding)
+#if (defined(HWY_NATIVE_DEMOTE_CEIL_TO) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_DEMOTE_CEIL_TO
+#undef HWY_NATIVE_DEMOTE_CEIL_TO
+#else
+#define HWY_NATIVE_DEMOTE_CEIL_TO
+#endif
+
+#if HWY_HAVE_FLOAT64
+template <class D32, HWY_IF_UI32_D(D32)>
+HWY_API VFromD<D32> DemoteCeilTo(D32 d32, VFromD<Rebind<double, D32>> v) {
+  return DemoteTo(d32, Ceil(v));
+}
+#endif  // HWY_HAVE_FLOAT64
+
+#if HWY_HAVE_FLOAT16
+template <class D16, HWY_IF_F16_D(D16)>
+HWY_API VFromD<D16> DemoteCeilTo(D16 d16, VFromD<Rebind<float, D16>> v) {
+  return DemoteTo(d16, Ceil(v));
+}
+#endif  // HWY_HAVE_FLOAT16
+
+#endif  // HWY_NATIVE_DEMOTE_CEIL_TO
+
+#if (defined(HWY_NATIVE_DEMOTE_FLOOR_TO) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_DEMOTE_FLOOR_TO
+#undef HWY_NATIVE_DEMOTE_FLOOR_TO
+#else
+#define HWY_NATIVE_DEMOTE_FLOOR_TO
+#endif
+
+#if HWY_HAVE_FLOAT64
+template <class D32, HWY_IF_UI32_D(D32)>
+HWY_API VFromD<D32> DemoteFloorTo(D32 d32, VFromD<Rebind<double, D32>> v) {
+  return DemoteTo(d32, Floor(v));
+}
+#endif  // HWY_HAVE_FLOAT64
+
+#if HWY_HAVE_FLOAT16
+template <class D16, HWY_IF_F16_D(D16)>
+HWY_API VFromD<D16> DemoteFloorTo(D16 d16, VFromD<Rebind<float, D16>> v) {
+  return DemoteTo(d16, Floor(v));
+}
+#endif  // HWY_HAVE_FLOAT16
+
+#endif  // HWY_NATIVE_DEMOTE_FLOOR_TO
+
 // ------------------------------ PromoteInRangeTo
 #if (defined(HWY_NATIVE_F32_TO_UI64_PROMOTE_IN_RANGE_TO) == \
      defined(HWY_TARGET_TOGGLE))
@@ -3463,6 +3905,24 @@ HWY_API VFromD<D> PromoteInRangeOddTo(D d, V v) {
 #endif
 }
 #endif  // HWY_TARGET != HWY_SCALAR
+
+// ------------------------------ PromoteCeilTo
+template <class DTo, class V, HWY_IF_FLOAT_V(V)>
+HWY_API Vec<DTo> PromoteCeilTo(DTo d, V v) {
+  return PromoteTo(d, Ceil(v));
+}
+
+// ------------------------------ PromoteFloorTo
+template <class DTo, class V, HWY_IF_FLOAT_V(V)>
+HWY_API Vec<DTo> PromoteFloorTo(DTo d, V v) {
+  return PromoteTo(d, Floor(v));
+}
+
+// ------------------------------ PromoteToNearestInt
+template <class DTo, class V, HWY_IF_FLOAT_V(V)>
+HWY_API Vec<DTo> PromoteToNearestInt(DTo d, V v) {
+  return PromoteTo(d, Round(v));
+}
 
 // ------------------------------ SumsOf2
 
@@ -3807,6 +4267,21 @@ HWY_API V TrailingZeroCount(V v) {
                      detail::F32ExpLzcntMinMaxBitCast(Set(du, kNumOfBitsInT))));
 }
 #endif  // HWY_NATIVE_LEADING_ZERO_COUNT
+
+// ------------------------------ MaskedLeadingZeroCountOrZero
+#if (defined(HWY_NATIVE_MASKED_LEADING_ZERO_COUNT) == \
+     defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+#undef HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+#else
+#define HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
+#endif
+
+template <class V, HWY_IF_NOT_FLOAT_NOR_SPECIAL_V(V), class M>
+HWY_API V MaskedLeadingZeroCountOrZero(M m, V v) {
+  return IfThenElseZero(m, LeadingZeroCount(v));
+}
+#endif  // HWY_NATIVE_MASKED_LEADING_ZERO_COUNT
 
 // ------------------------------ AESRound
 
@@ -4274,6 +4749,12 @@ HWY_API V operator*(V x, V y) {
 
 #endif  // HWY_NATIVE_MUL_64
 
+// ------------------------------ MulRound
+template <class V, HWY_IF_FLOAT_V(V)>
+HWY_API V MulRound(V a, V b) {
+  return Round(Mul(a, b));
+}
+
 // ------------------------------ MulAdd / NegMulAdd
 
 #if (defined(HWY_NATIVE_INT_FMA) == defined(HWY_TARGET_TOGGLE))
@@ -4304,6 +4785,89 @@ HWY_API V MulSub(V mul, V x, V sub) {
   return Sub(Mul(mul, x), sub);
 }
 #endif  // HWY_NATIVE_INT_FMA
+
+// ------------------------------ MulAddLower
+#if (defined(HWY_NATIVE_MUL_ADD_LOWER) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MUL_ADD_LOWER
+#undef HWY_NATIVE_MUL_ADD_LOWER
+#else
+#define HWY_NATIVE_MUL_ADD_LOWER
+#endif
+
+template <class V>
+HWY_API V MulAddLower(const V a, const V b, const V c) {
+  const DFromV<V> d;
+  const MFromD<DFromV<V>> LowerMask = FirstN(d, 1);
+  return IfThenElse(LowerMask, MulAdd(a, b, c), a);
+}
+
+#endif  // HWY_NATIVE_MUL_ADD_LOWER
+
+// ------------------------------ MulCplx* / MaskedMulCplx*
+
+#if (defined(HWY_NATIVE_CPLX) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_CPLX
+#undef HWY_NATIVE_CPLX
+#else
+#define HWY_NATIVE_CPLX
+#endif
+
+#if HWY_TARGET != HWY_SCALAR || HWY_IDE
+
+template <class V, HWY_IF_NOT_UNSIGNED(TFromV<V>)>
+HWY_API V CplxConj(V a) {
+  return OddEven(Neg(a), a);
+}
+
+template <class V>
+HWY_API V MulCplx(V a, V b) {
+  // a = u + iv, b = x + iy
+  const auto u = DupEven(a);
+  const auto v = DupOdd(a);
+  const auto x = DupEven(b);
+  const auto y = DupOdd(b);
+
+  return OddEven(Add(Mul(u, y), Mul(v, x)), Sub(Mul(u, x), Mul(v, y)));
+}
+
+template <class V>
+HWY_API V MulCplxConj(V a, V b) {
+  // a = u + iv, b = x + iy
+  const auto u = DupEven(a);
+  const auto v = DupOdd(a);
+  const auto x = DupEven(b);
+  const auto y = DupOdd(b);
+
+  return OddEven(Sub(Mul(v, x), Mul(u, y)), Add(Mul(u, x), Mul(v, y)));
+}
+
+template <class V>
+HWY_API V MulCplxAdd(V a, V b, V c) {
+  return Add(MulCplx(a, b), c);
+}
+
+template <class V>
+HWY_API V MulCplxConjAdd(V a, V b, V c) {
+  return Add(MulCplxConj(a, b), c);
+}
+
+template <class V, class M>
+HWY_API V MaskedMulCplxConjAddOrZero(M mask, V a, V b, V c) {
+  return IfThenElseZero(mask, MulCplxConjAdd(a, b, c));
+}
+
+template <class V, class M>
+HWY_API V MaskedMulCplxConjOrZero(M mask, V a, V b) {
+  return IfThenElseZero(mask, MulCplxConj(a, b));
+}
+
+template <class V, class M>
+HWY_API V MaskedMulCplxOr(M mask, V a, V b, V c) {
+  return IfThenElse(mask, MulCplx(a, b), c);
+}
+#endif  // HWY_TARGET != HWY_SCALAR
+
+#endif  // HWY_NATIVE_CPLX
 
 // ------------------------------ Integer MulSub / NegMulSub
 #if (defined(HWY_NATIVE_INT_FMSUB) == defined(HWY_TARGET_TOGGLE))
@@ -4358,6 +4922,38 @@ HWY_API V MulAddSub(V mul, V x, V sub_or_add) {
   const auto add =
       OddEven(sub_or_add, BitCast(d, Neg(BitCast(d_negate, sub_or_add))));
   return MulAdd(mul, x, add);
+}
+
+// ------------------------------ MaskedPromoteToOrZero
+template <class D, class V, class M>
+HWY_API VFromD<D> MaskedPromoteToOrZero(M m, D d, V v) {
+  return IfThenElseZero(m, PromoteTo(d, v));
+}
+
+// ------------------------------ MaskedDemoteToOrZero
+template <class D, class V, class M>
+HWY_API VFromD<D> MaskedDemoteToOrZero(M m, D d, V v) {
+  return IfThenElseZero(m, DemoteTo(d, v));
+}
+
+// ------------------------------ MaskedConvertToOrZero
+template <class D, class V, class M>
+HWY_API VFromD<D> MaskedConvertToOrZero(M m, D d, V v) {
+  return IfThenElseZero(m, ConvertTo(d, v));
+}
+
+// ------------------------------ MulSubAdd
+
+template <class V>
+HWY_API V MulSubAdd(V mul, V x, V sub_or_add) {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  using TNegate = If<!IsSigned<T>(), MakeSigned<T>, T>;
+
+  const D d;
+  const Rebind<TNegate, D> d_negate;
+
+  return MulAddSub(mul, x, BitCast(d, Neg(BitCast(d_negate, sub_or_add))));
 }
 
 // ------------------------------ Integer division
@@ -5184,6 +5780,30 @@ HWY_API VFromD<DI32> SatWidenMulAccumFixedPoint(DI32 di32,
 
 #endif  // HWY_NATIVE_I16_SATWIDENMULACCUMFIXEDPOINT
 
+// ------------------------------ SqrtLower
+#if (defined(HWY_NATIVE_SQRT_LOWER) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_SQRT_LOWER
+#undef HWY_NATIVE_SQRT_LOWER
+#else
+#define HWY_NATIVE_SQRT_LOWER
+#endif
+
+template <class V, HWY_IF_FLOAT_V(V)>
+HWY_API V SqrtLower(V a) {
+  const DFromV<V> d;
+  const auto first_mask = FirstN(d, 1);
+  return IfThenElse(first_mask, Sqrt(a), a);
+}
+
+#undef HWY_SVE_SQRT_LOWER
+#endif  // HWY_NATIVE_SQRT_LOWER
+
+// ------------------------------ MaskedSqrtOrZero
+template <class V, HWY_IF_FLOAT_V(V), class M>
+HWY_API V MaskedSqrtOrZero(M m, V v) {
+  return IfThenElseZero(m, Sqrt(v));
+}
+
 // ------------------------------ SumOfMulQuadAccumulate
 
 #if (defined(HWY_NATIVE_I8_I8_SUMOFMULQUADACCUMULATE) == \
@@ -5368,6 +5988,12 @@ HWY_API V ApproximateReciprocal(V v) {
 
 #endif  // HWY_NATIVE_F64_APPROX_RECIP
 
+// ------------------------------ MaskedApproximateReciprocalOrZero
+template <class V, HWY_IF_FLOAT_V(V), class M>
+HWY_API V MaskedApproximateReciprocalOrZero(M m, V v) {
+  return IfThenElseZero(m, ApproximateReciprocal(v));
+}
+
 // ------------------------------ F64 ApproximateReciprocalSqrt
 
 #if (defined(HWY_NATIVE_F64_APPROX_RSQRT) == defined(HWY_TARGET_TOGGLE))
@@ -5392,6 +6018,12 @@ HWY_API V ApproximateReciprocalSqrt(V v) {
 #endif  // HWY_HAVE_FLOAT64
 
 #endif  // HWY_NATIVE_F64_APPROX_RSQRT
+
+// ------------------------------ MaskedApproximateReciprocalSqrtOrZero
+template <class V, HWY_IF_FLOAT_V(V), class M>
+HWY_API V MaskedApproximateReciprocalSqrtOrZero(M m, V v) {
+  return IfThenElseZero(m, ApproximateReciprocalSqrt(v));
+}
 
 // ------------------------------ Compress*
 
@@ -6444,6 +7076,30 @@ HWY_API V ReverseBits(V v) {
 }
 #endif  // HWY_NATIVE_REVERSE_BITS_UI16_32_64
 
+// ------------------------------ TableLookupLanesOr
+template <class V, class M>
+HWY_API V TableLookupLanesOr(M m, V a, V b, IndicesFromD<DFromV<V>> idx) {
+  return IfThenElse(m, TableLookupLanes(a, idx), b);
+}
+
+// ------------------------------ TableLookupLanesOrZero
+template <class V, class M>
+HWY_API V TableLookupLanesOrZero(M m, V a, IndicesFromD<DFromV<V>> idx) {
+  return IfThenElseZero(m, TableLookupLanes(a, idx));
+}
+
+// ------------------------------ TwoTablesLookupLanesOr
+template <class D, class V, class M>
+HWY_API V TwoTablesLookupLanesOr(D d, M m, V a, V b, IndicesFromD<D> idx) {
+  return IfThenElse(m, TwoTablesLookupLanes(d, a, b, idx), a);
+}
+
+// ------------------------------ TwoTablesLookupLanesOrZero
+template <class D, class V, class M>
+HWY_API V TwoTablesLookupLanesOrZero(D d, M m, V a, V b, IndicesFromD<D> idx) {
+  return IfThenElse(m, TwoTablesLookupLanes(d, a, b, idx), Zero(d));
+}
+
 // ------------------------------ Per4LaneBlockShuffle
 
 #if (defined(HWY_NATIVE_PER4LANEBLKSHUF_DUP32) == defined(HWY_TARGET_TOGGLE))
@@ -7298,6 +7954,102 @@ HWY_API V BitShuffle(V v, VI idx) {
 #endif  // HWY_HAVE_INTEGER64 && HWY_TARGET != HWY_SCALAR
 
 #endif  // HWY_NATIVE_BITSHUFFLE
+
+// ------------------------------ MultiShift (Rol)
+#if (defined(HWY_NATIVE_MULTISHIFT) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MULTISHIFT
+#undef HWY_NATIVE_MULTISHIFT
+#else
+#define HWY_NATIVE_MULTISHIFT
+#endif
+
+template <class V, class VI, HWY_IF_UI64(TFromV<V>), HWY_IF_UI8(TFromV<VI>)>
+HWY_API V MultiShift(V v, VI idx) {
+  const DFromV<V> d64;
+  const Repartition<uint8_t, decltype(d64)> du8;
+  const Repartition<uint16_t, decltype(d64)> du16;
+  const auto k7 = Set(du8, uint8_t{0x07});
+  const auto k63 = Set(du8, uint8_t{0x3F});
+
+  const auto masked_idx = And(k63, BitCast(du8, idx));
+  const auto byte_idx = ShiftRight<3>(masked_idx);
+  const auto idx_shift = And(k7, masked_idx);
+
+  // Calculate even lanes
+  const auto even_src = DupEven(v);
+  // Expand indexes to pull out 16 bit segments of idx and idx + 1
+  const auto even_idx =
+      InterleaveLower(byte_idx, Add(byte_idx, Set(du8, uint8_t{1})));
+  // TableLookupBytes indexes select from within a 16 byte block
+  const auto even_segments = TableLookupBytes(even_src, even_idx);
+  // Extract unaligned bytes from 16 bit segments
+  const auto even_idx_shift = ZipLower(idx_shift, Zero(du8));
+  const auto extracted_even_bytes =
+      Shr(BitCast(du16, even_segments), even_idx_shift);
+
+  // Calculate odd lanes
+  const auto odd_src = DupOdd(v);
+  // Expand indexes to pull out 16 bit segments of idx and idx + 1
+  const auto odd_idx =
+      InterleaveUpper(du8, byte_idx, Add(byte_idx, Set(du8, uint8_t{1})));
+  // TableLookupBytes indexes select from within a 16 byte block
+  const auto odd_segments = TableLookupBytes(odd_src, odd_idx);
+  // Extract unaligned bytes from 16 bit segments
+  const auto odd_idx_shift = ZipUpper(du16, idx_shift, Zero(du8));
+  const auto extracted_odd_bytes =
+      Shr(BitCast(du16, odd_segments), odd_idx_shift);
+
+  // Extract the even bytes of each 128 bit block and pack into lower 64 bits
+  const auto extract_mask = Dup128VecFromValues(du8, 0, 2, 4, 6, 8, 10, 12, 14,
+                                                0, 0, 0, 0, 0, 0, 0, 0);
+  const auto even_lanes =
+      BitCast(d64, TableLookupBytes(extracted_even_bytes, extract_mask));
+  const auto odd_lanes =
+      BitCast(d64, TableLookupBytes(extracted_odd_bytes, extract_mask));
+  // Interleave at 64 bit level
+  return InterleaveLower(even_lanes, odd_lanes);
+}
+
+#endif
+
+// ------------------------------ AllOnes/AllZeros
+#if (defined(HWY_NATIVE_ALLONES) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_ALLONES
+#undef HWY_NATIVE_ALLONES
+#else
+#define HWY_NATIVE_ALLONES
+#endif
+
+template <class V>
+HWY_API bool AllOnes(V a) {
+  DFromV<V> d;
+  return AllTrue(d, Eq(Not(a), Zero(d)));
+}
+#endif  // HWY_NATIVE_ALLONES
+
+#if (defined(HWY_NATIVE_ALLZEROS) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_ALLZEROS
+#undef HWY_NATIVE_ALLZEROS
+#else
+#define HWY_NATIVE_ALLZEROS
+#endif
+
+template <class V>
+HWY_API bool AllZeros(V a) {
+  DFromV<V> d;
+  return AllTrue(d, Eq(a, Zero(d)));
+}
+#endif  // HWY_NATIVE_ALLZEROS
+
+template <class V, class M>
+HWY_API V MaskedMaxOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, (Max(a, b)));
+}
+
+template <class V, class M>
+HWY_API V MaskedOrOrZero(M m, V a, V b) {
+  return IfThenElseZero(m, Or(a, b));
+}
 
 // ================================================== Operator wrapper
 

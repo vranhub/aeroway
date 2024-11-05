@@ -44,7 +44,7 @@ make -j && ctest -j && cd .. && rm -rf build_arm7
 echo Armv8 GCC
 export QEMU_LD_PREFIX=/usr/aarch64-linux-gnu
 rm -rf build_arm8 && mkdir build_arm8 && cd build_arm8
-CC=aarch64-linux-gnu-gcc-11 CXX=aarch64-linux-gnu-g++-11 cmake .. -DHWY_WARNINGS_ARE_ERRORS:BOOL=ON -DCMAKE_BUILD_TYPE=Release
+CC=aarch64-linux-gnu-gcc-12 CXX=aarch64-linux-gnu-g++-12 cmake .. -DHWY_WARNINGS_ARE_ERRORS:BOOL=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CROSSCOMPILING_EMULATOR=/usr/bin/qemu-aarch64
 make -j && ctest -j && cd .. && rm -rf build_arm8
 
 #######################################
