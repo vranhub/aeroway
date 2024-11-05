@@ -24,6 +24,7 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
 // All types.
 struct TestEquality {
@@ -848,8 +849,8 @@ HWY_NOINLINE void TestAllMaskedFloatClassification() {
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
-
 namespace hwy {
+namespace {
 HWY_BEFORE_TEST(HwyCompareTest);
 HWY_EXPORT_AND_TEST_P(HwyCompareTest, TestAllEquality);
 HWY_EXPORT_AND_TEST_P(HwyCompareTest, TestAllStrictUnsigned);
@@ -867,6 +868,7 @@ HWY_EXPORT_AND_TEST_P(HwyCompareTest, TestAllEq128Upper);
 HWY_EXPORT_AND_TEST_P(HwyCompareTest, TestAllMaskedComparision);
 HWY_EXPORT_AND_TEST_P(HwyCompareTest, TestAllMaskedFloatClassification);
 HWY_AFTER_TEST();
+}  // namespace
 }  // namespace hwy
-
-#endif
+HWY_TEST_MAIN();
+#endif  // HWY_ONCE

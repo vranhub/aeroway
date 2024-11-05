@@ -25,6 +25,7 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
 struct TestPopulationCount {
   template <class T, class D>
@@ -332,14 +333,15 @@ HWY_NOINLINE void TestAllHighestSetBitIndex() {
   ForIntegerTypes(ForPartialVectors<TestHighestSetBitIndex>());
 }
 
+}  // namespace
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
-
 namespace hwy {
+namespace {
 HWY_BEFORE_TEST(HwyCountTest);
 HWY_EXPORT_AND_TEST_P(HwyCountTest, TestAllPopulationCount);
 HWY_EXPORT_AND_TEST_P(HwyCountTest, TestAllLeadingZeroCount);
@@ -347,6 +349,7 @@ HWY_EXPORT_AND_TEST_P(HwyCountTest, TestAllMaskedLeadingZeroCount);
 HWY_EXPORT_AND_TEST_P(HwyCountTest, TestAllTrailingZeroCount);
 HWY_EXPORT_AND_TEST_P(HwyCountTest, TestAllHighestSetBitIndex);
 HWY_AFTER_TEST();
+}  // namespace
 }  // namespace hwy
-
-#endif
+HWY_TEST_MAIN();
+#endif  // HWY_ONCE

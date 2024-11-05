@@ -30,6 +30,7 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
 template <typename ToT>
 struct TestDemoteTo {
@@ -1021,6 +1022,7 @@ HWY_NOINLINE void TestAllI32F64() {
 #endif
 }
 
+}  // namespace
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
 }  // namespace hwy
@@ -1029,8 +1031,8 @@ HWY_AFTER_NAMESPACE();
 #endif  //  !HWY_IS_MSAN
 
 #if HWY_ONCE
-
 namespace hwy {
+namespace {
 #if !HWY_IS_MSAN
 HWY_BEFORE_TEST(HwyDemoteTest);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllDemoteToInt);
@@ -1045,6 +1047,7 @@ HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllOrderedDemote2To);
 HWY_EXPORT_AND_TEST_P(HwyDemoteTest, TestAllI32F64);
 HWY_AFTER_TEST();
 #endif  //  !HWY_IS_MSAN
+}  // namespace
 }  // namespace hwy
-
-#endif
+HWY_TEST_MAIN();
+#endif  // HWY_ONCE

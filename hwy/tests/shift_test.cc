@@ -24,6 +24,7 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
 template <bool kSigned>
 struct TestLeftShifts {
@@ -651,8 +652,8 @@ HWY_NOINLINE void TestAllMultiShift() {
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
-
 namespace hwy {
+namespace {
 HWY_BEFORE_TEST(HwyShiftTest);
 HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllShifts);
 HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllVariableShifts);
@@ -661,6 +662,7 @@ HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllVariableRoundingShr);
 HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllMaskedShift);
 HWY_EXPORT_AND_TEST_P(HwyShiftTest, TestAllMultiShift);
 HWY_AFTER_TEST();
+}  // namespace
 }  // namespace hwy
-
-#endif
+HWY_TEST_MAIN();
+#endif  // HWY_ONCE

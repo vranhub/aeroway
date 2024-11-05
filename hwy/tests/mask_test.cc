@@ -26,6 +26,7 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
 // All types.
 struct TestMaskFalse {
@@ -614,8 +615,8 @@ HWY_NOINLINE void TestAllSetOrZero() {
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
-
 namespace hwy {
+namespace {
 HWY_BEFORE_TEST(HwyMaskTest);
 HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllMaskFalse);
 HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllFromVec);
@@ -634,6 +635,7 @@ HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllDup128MaskFromMaskBits);
 HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllSetOr);
 HWY_EXPORT_AND_TEST_P(HwyMaskTest, TestAllSetOrZero);
 HWY_AFTER_TEST();
+}  // namespace
 }  // namespace hwy
-
-#endif
+HWY_TEST_MAIN();
+#endif  // HWY_ONCE

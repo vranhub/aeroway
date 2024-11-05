@@ -24,6 +24,7 @@
 HWY_BEFORE_NAMESPACE();
 namespace hwy {
 namespace HWY_NAMESPACE {
+namespace {
 
 struct TestAddSubMul {
   template <class T, class D>
@@ -967,8 +968,8 @@ HWY_NOINLINE void TestAllWidenMulPairwiseAddOrZero() {
 HWY_AFTER_NAMESPACE();
 
 #if HWY_ONCE
-
 namespace hwy {
+namespace {
 HWY_BEFORE_TEST(HwyMaskedArithmeticTest);
 HWY_EXPORT_AND_TEST_P(HwyMaskedArithmeticTest, TestAllAddSubMul);
 HWY_EXPORT_AND_TEST_P(HwyMaskedArithmeticTest, TestAllSatAddSub);
@@ -987,6 +988,7 @@ HWY_EXPORT_AND_TEST_P(HwyMaskedArithmeticTest, TestAllMulAddOrZero);
 HWY_EXPORT_AND_TEST_P(HwyMaskedArithmeticTest,
                       TestAllWidenMulPairwiseAddOrZero);
 HWY_AFTER_TEST();
+}  // namespace
 }  // namespace hwy
-
-#endif
+HWY_TEST_MAIN();
+#endif  // HWY_ONCE
