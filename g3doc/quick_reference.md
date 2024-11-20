@@ -907,6 +907,18 @@ not a concern, these are equivalent to, and potentially more efficient than,
     <code>V **MaskedSatSubOr**(V no, M m, V a, V b)</code>: returns `a[i] +
     b[i]` saturated to the minimum/maximum representable value, or `no[i]` if
     `m[i]` is false.
+*   `V`: `{i,f}` \
+    <code>V **MaskedAbsOr**(M m, V a, V b)</code>: returns the absolute value of
+    `a[i]` where m is active and returns `b[i]` otherwise.
+
+#### Zero masked arithmetic
+
+Ops in this section return `0` for `mask=false` lanes. These are equivalent
+to, and potentially more efficient than, `IfThenElseZero(m, Abs(a, b));` etc.
+
+*   `V`: `{i,f}` \
+    <code>V **MaskedAbsOrZero**(M m, V a)</code>: returns the absolute value of
+    `a[i]` where m is active and returns zero otherwise.
 
 #### Shifts
 
