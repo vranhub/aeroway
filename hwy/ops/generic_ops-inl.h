@@ -6803,6 +6803,30 @@ HWY_API V ReverseBits(V v) {
 }
 #endif  // HWY_NATIVE_REVERSE_BITS_UI16_32_64
 
+// ------------------------------ MaskedTableLookupLanesOr
+template <class V, class M>
+HWY_API V MaskedTableLookupLanesOr(V no, M m, V a, IndicesFromD<DFromV<V>> idx) {
+  return IfThenElse(m, TableLookupLanes(a, idx), no);
+}
+
+// ------------------------------ MaskedTableLookupLanes
+template <class V, class M>
+HWY_API V MaskedTableLookupLanes(M m, V a, IndicesFromD<DFromV<V>> idx) {
+  return IfThenElseZero(m, TableLookupLanes(a, idx));
+}
+
+// ------------------------------ TwoTablesLookupLanesOr
+template <class D, class V, class M>
+HWY_API V MaskedTwoTablesLookupLanesOr(D d, M m, V a, V b, IndicesFromD<D> idx) {
+  return IfThenElse(m, TwoTablesLookupLanes(d, a, b, idx), a);
+}
+
+// ------------------------------ TwoTablesLookupLanesOrZero
+template <class D, class V, class M>
+HWY_API V MaskedTwoTablesLookupLanes(D d, M m, V a, V b, IndicesFromD<D> idx) {
+  return IfThenElse(m, TwoTablesLookupLanes(d, a, b, idx), Zero(d));
+}
+
 // ------------------------------ Per4LaneBlockShuffle
 
 #if (defined(HWY_NATIVE_PER4LANEBLKSHUF_DUP32) == defined(HWY_TARGET_TOGGLE))
