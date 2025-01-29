@@ -787,15 +787,23 @@ struct TestMaskedFloatClassification {
 
     // Test against all zeros
     HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsNaN(mask_true, v0));
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsInf(mask_true, v0));
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedIsFinite(mask_true, v0));
 
     // Test against finite values
     HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsNaN(mask_true, v1));
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsInf(mask_true, v1));
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedIsFinite(mask_true, v1));
 
     // Test against infinite values
     HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsNaN(mask_true, v2));
+    HWY_ASSERT_MASK_EQ(d, mask_true, MaskedIsInf(mask_true, v2));
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsFinite(mask_true, v2));
 
     // Test against NaN values
     HWY_ASSERT_MASK_EQ(d, mask_true, MaskedIsNaN(mask_true, v3));
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsInf(mask_true, v3));
+    HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsFinite(mask_true, v3));
 
     auto bool_lanes = AllocateAligned<T>(N);
     HWY_ASSERT(bool_lanes);
@@ -810,15 +818,23 @@ struct TestMaskedFloatClassification {
 
       // Test against all zeros
       HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsNaN(mask, v0));
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsInf(mask, v0));
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedIsFinite(mask, v0));
 
       // Test against finite values
       HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsNaN(mask, v1));
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsInf(mask, v1));
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedIsFinite(mask, v1));
 
       // Test against infinite values
       HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsNaN(mask, v2));
+      HWY_ASSERT_MASK_EQ(d, mask, MaskedIsInf(mask, v2));
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsFinite(mask, v2));
 
       // Test against NaN values
       HWY_ASSERT_MASK_EQ(d, mask, MaskedIsNaN(mask, v3));
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsInf(mask, v3));
+      HWY_ASSERT_MASK_EQ(d, mask_false, MaskedIsFinite(mask, v3));
     }
   }
 };
