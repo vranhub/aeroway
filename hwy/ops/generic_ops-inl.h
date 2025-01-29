@@ -661,6 +661,25 @@ HWY_API V MaskedSatSubOr(V no, M m, V a, V b) {
 }
 #endif  // HWY_NATIVE_MASKED_ARITH
 
+// ------------------------------ MaskedIsInf/MaskedIsFinite
+#if (defined(HWY_NATIVE_MASKED_IS_INF) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_MASKED_IS_INF
+#undef HWY_NATIVE_MASKED_IS_INF
+#else
+#define HWY_NATIVE_MASKED_IS_INF
+#endif
+
+template <class V, class M, class D = DFromV<V>>
+HWY_API MFromD<D> MaskedIsInf(const M m, const V v) {
+  return And(m, IsInf(v));
+}
+
+template <class V, class M, class D = DFromV<V>>
+HWY_API MFromD<D> MaskedIsFinite(const M m, const V v) {
+  return And(m, IsFinite(v));
+}
+#endif  // HWY_NATIVE_MASKED_IS_INF
+
 // ------------------------------ MaskedEq etc.
 #if (defined(HWY_NATIVE_MASKED_COMP) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_MASKED_COMP
