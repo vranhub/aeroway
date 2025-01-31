@@ -518,6 +518,24 @@ HWY_API V InterleaveEven(V a, V b) {
 }
 #endif
 
+// ------------------------------ MaskedInterleaveEven
+
+#if HWY_TARGET != HWY_SCALAR || HWY_IDE
+template <class V, class M>
+HWY_API V MaskedInterleaveEven(M m, V a, V b) {
+  return IfThenElseZero(m, InterleaveEven(DFromV<V>(), a, b));
+}
+#endif
+
+// ------------------------------ MaskedInterleaveOdd
+
+#if HWY_TARGET != HWY_SCALAR || HWY_IDE
+template <class V, class M>
+HWY_API V MaskedInterleaveOdd(M m, V a, V b) {
+  return IfThenElseZero(m, InterleaveOdd(DFromV<V>(), a, b));
+}
+#endif
+
 // ------------------------------ MinMagnitude/MaxMagnitude
 
 #if (defined(HWY_NATIVE_FLOAT_MIN_MAX_MAGNITUDE) == defined(HWY_TARGET_TOGGLE))
