@@ -2916,9 +2916,10 @@ HWY_API T ReduceSum(D d, VFromD<D> v) {
   }
   return sum;
 }
+
 template <class D, typename T = TFromD<D>, HWY_IF_REDUCE_D(D)>
 HWY_API T ReduceMin(D d, VFromD<D> v) {
-  T min = HighestValue<T>();
+  T min = PositiveInfOrHighestValue<T>();
   for (size_t i = 0; i < MaxLanes(d); ++i) {
     min = HWY_MIN(min, v.raw[i]);
   }
@@ -2926,7 +2927,7 @@ HWY_API T ReduceMin(D d, VFromD<D> v) {
 }
 template <class D, typename T = TFromD<D>, HWY_IF_REDUCE_D(D)>
 HWY_API T ReduceMax(D d, VFromD<D> v) {
-  T max = LowestValue<T>();
+  T max = NegativeInfOrLowestValue<T>();
   for (size_t i = 0; i < MaxLanes(d); ++i) {
     max = HWY_MAX(max, v.raw[i]);
   }

@@ -2734,6 +2734,27 @@ HWY_API Vec256<double> ApproximateReciprocal(Vec256<double> v) {
 }
 #endif
 
+// ------------------------------ GetExponent
+
+#if HWY_TARGET <= HWY_AVX3
+
+#if HWY_HAVE_FLOAT16
+template <class V, HWY_IF_F16(TFromV<V>), HWY_IF_V_SIZE_V(V, 32)>
+HWY_API V GetExponent(V v) {
+  return V{_mm256_getexp_ph(v.raw)};
+}
+#endif
+template <class V, HWY_IF_F32(TFromV<V>), HWY_IF_V_SIZE_V(V, 32)>
+HWY_API V GetExponent(V v) {
+  return V{_mm256_getexp_ps(v.raw)};
+}
+template <class V, HWY_IF_F64(TFromV<V>), HWY_IF_V_SIZE_V(V, 32)>
+HWY_API V GetExponent(V v) {
+  return V{_mm256_getexp_pd(v.raw)};
+}
+
+#endif
+
 // ------------------------------ MaskedMinOr
 
 #if HWY_TARGET <= HWY_AVX3
@@ -8773,6 +8794,24 @@ HWY_API V BitShuffle(V v, VI idx) {
                                           i32_bit_shuf_result)}));
 }
 #endif  // HWY_TARGET <= HWY_AVX3_DL
+
+// ------------------------------ MultiShiftRight
+
+#if HWY_TARGET <= HWY_AVX3_DL
+
+#ifdef HWY_NATIVE_MULTIROTATERIGHT
+#undef HWY_NATIVE_MULTIROTATERIGHT
+#else
+#define HWY_NATIVE_MULTIROTATERIGHT
+#endif
+
+template <class V, class VI, HWY_IF_UI64(TFromV<V>), HWY_IF_UI8(TFromV<VI>),
+          HWY_IF_V_SIZE_V(V, 32), HWY_IF_V_SIZE_V(VI, HWY_MAX_LANES_V(V) * 8)>
+HWY_API V MultiRotateRight(V v, VI idx) {
+  return V{_mm256_multishift_epi64_epi8(idx.raw, v.raw)};
+}
+
+#endif
 
 // ------------------------------ LeadingZeroCount
 
