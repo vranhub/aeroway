@@ -304,8 +304,8 @@ Store(v, d2, ptr);  // Use d2, NOT DFromV<decltype(v)>()
 ## Targets
 
 Let `Target` denote an instruction set, one of `SCALAR/EMU128`, `RVV`,
-`SSE2/SSSE3/SSE4/AVX2/AVX3/AVX3_DL/AVX3_ZEN4/AVX3_SPR` (x86),
-`PPC8/PPC9/PPC10/Z14/Z15` (POWER), `WASM/WASM_EMU256` (WebAssembly),
+`SSE2/SSSE3/SSE4/AVX2/AVX3/AVX3_DL/AVX3_ZEN4/AVX3_SPR` (x86), `PPC8/PPC9/PPC10`
+(POWER), `Z14/Z15` (IBM Z), `WASM/WASM_EMU256` (WebAssembly),
 `NEON_WITHOUT_AES/NEON/NEON_BF16/SVE/SVE2/SVE_256/SVE2_128` (Arm).
 
 Note that x86 CPUs are segmented into dozens of feature flags and capabilities,
@@ -348,9 +348,6 @@ instructions (implying the target CPU must support them).
 *   `HWY_WANT_SSSE3`, `HWY_WANT_SSE4`: add SSSE3 and SSE4 to the baseline even
     if they are not marked as available by the compiler. On MSVC, the only ways
     to enable SSSE3 and SSE4 are defining these, or enabling AVX.
-
-*   `HWY_WANT_AVX3_DL`: opt-in for dynamic dispatch to `HWY_AVX3_DL`. This is
-    unnecessary if the baseline already includes AVX3_DL.
 
 You can detect and influence the set of supported targets:
 
@@ -935,6 +932,36 @@ not a concern, these are equivalent to, and potentially more efficient than,
 All ops in this section return `0` for `mask=false` lanes. These are equivalent
 to, and potentially more efficient than, `IfThenElseZero(m, Add(a, b));` etc.
 
+*   <code>V **MaskedMax**(M m, V a, V b)</code>: returns `Max(a, b)[i]`
+    or `zero` if `m[i]` is false.
+*   <code>V **MaskedAdd**(M m, V a, V b)</code>: returns `a[i] + b[i]`
+    or `0` if `m[i]` is false.
+*   <code>V **MaskedSub**(M m, V a, V b)</code>: returns `a[i] - b[i]`
+    or `0` if `m[i]` is false.
+*   <code>V **MaskedMul**(M m, V a, V b)</code>: returns `a[i] * b[i]`
+    or `0` if `m[i]` is false.
+*   <code>V **MaskedDiv**(M m, V a, V b)</code>: returns `a[i] / b[i]`
+    or `0` if `m[i]` is false.
+*   `V`: `{u,i}{8,16}` \
+    <code>V **MaskedSaturatedAdd**(M m, V a, V b)</code>: returns `a[i] +
+    b[i]` saturated to the minimum/maximum representable value, or `0` if
+    `m[i]` is false.
+*   `V`: `{u,i}{8,16}` \
+    <code>V **MaskedSaturatedSub**(M m, V a, V b)</code>: returns `a[i] -
+    b[i]` saturated to the minimum/maximum representable value, or `0` if
+    `m[i]` is false.
+*   `V`: `i16` \
+    <code>V **MaskedMulFixedPoint15**(M m, V a, V b)</code>: returns returns the
+    result of multiplying two Q1.15 fixed-point numbers, or `0` if `m[i]` is
+    false.
+*   <code>V **MaskedMulAdd**(M m, V a, V b, V c)</code>: returns `a[i] *
+    b[i] + c[i]` or `0` if `m[i]` is false.
+*   <code>V **MaskedNegMulAdd**(M m, V a, V b, V c)</code>: returns
+    `-a[i] * b[i] + c[i]` or `0` if `m[i]` is false.
+*   `V`: `{bf,u,i}16`, `D`: `RepartitionToWide<DFromV<V>>` \
+    <code>Vec&lt;D&gt; **MaskedWidenMulPairwiseAdd**(D d, M m, V a, V b)</code>: widens `a`
+    and `b` to `TFromD<D>` and computes `a[2*i+1]*b[2*i+1] + a[2*i+0]*b[2*i+0]`,
+    or `0` if `m[i]` is false.
 *   `V`: `{f}` \
     <code>V **MaskedSqrt**(M m, V a)</code>: returns `sqrt(a[i])` where
     m is true, and zero otherwise.
@@ -944,6 +971,41 @@ to, and potentially more efficient than, `IfThenElseZero(m, Add(a, b));` etc.
 *   `V`: `{f}` \
     <code>V **MaskedApproximateReciprocal**(M m, V a)</code>: returns the
     result of ApproximateReciprocal where m is true and zero otherwise.
+
+#### Complex number operations
+
+Complex types are represented as complex value pairs of real and imaginary
+components, with the real components in even-indexed lanes and the imaginary
+components in odd-indexed lanes.
+
+All multiplies in this section are performing complex multiplication,
+i.e. `(a + ib)(c + id)`.
+
+Take `j` to be the even values of `i`.
+
+*   `V`: `{f}` \
+    <code>V **ComplexConj**(V v)</code>: returns the complex conjugate of the vector,
+    this negates the imaginary lanes. This is equivalent to `OddEven(Neg(a), a)`.
+*   `V`: `{f}` \
+    <code>V **MulComplex**(V a, V b)</code>: returns `(a[j] + i.a[j + 1])(b[j] + i.b[j + 1])`
+*   `V`: `{f}` \
+    <code>V **MulComplexConj**(V a, V b)</code>: returns `(a[j] + i.a[j + 1])(b[j] - i.b[j + 1])`
+*   `V`: `{f}` \
+    <code>V **MulComplexAdd**(V a, V b, V c)</code>: returns
+    `(a[j] + i.a[j + 1])(b[j] + i.b[j + 1]) + (c[j] + i.c[j + 1])`
+*   `V`: `{f}` \
+    <code>V **MulComplexConjAdd**(V a, V b, V c)</code>: returns
+    `(a[j] + i.a[j + 1])(b[j] - i.b[j + 1]) + (c[j] + i.c[j + 1])`
+*   `V`: `{f}` \
+    <code>V **MaskedMulComplexConjAdd**(M mask, V a, V b, V c)</code>: returns
+    `(a[j] + i.a[j + 1])(b[j] - i.b[j + 1]) + (c[j] + i.c[j + 1])` or `0` if
+    `mask[i]` is false.
+*   `V`: `{f}` \
+    <code>V **MaskedMulComplexConj**(M mask, V a, V b)</code>: returns
+    `(a[j] + i.a[j + 1])(b[j] - i.b[j + 1])` or `0` if `mask[i]` is false.
+*   `V`: `{f}` \
+    <code>V **MaskedMulComplexOr**(V no, M mask, V a, V b)</code>: returns `(a[j] +
+    i.a[j + 1])(b[j] + i.b[j + 1])` or `no[i]` if `mask[i]` is false.
 
 #### Shifts
 
@@ -1023,6 +1085,55 @@ Per-lane variable shifts (slow if SSSE3/SSE4, or 16-bit, or Shr i64 on AVX2):
     `(static_cast<TU>(a[i]) >> (b[i] & shift_amt_mask)) |
     (a[i] << ((sizeof(T)*8 - b[i]) & shift_amt_mask))`, where `shift_amt_mask` is
     equal to `sizeof(T)*8 - 1`.
+
+A compound shift on 64-bit values:
+
+*   `V`: `{u,i}64`, `VI`: `{u,i}8` \
+    <code>V **MultiRotateRight**(V vals, VI indices)</code>: returns a
+    vector with `(vals[i] >> indices[i*8+j]) & 0xff` in byte `j` of vector `r[i]`
+    for each `j` between 0 and 7.
+
+    If `indices[i*8+j]` is less than 0 or greater than 63, byte `j` of `r[i]` is
+    implementation-defined.
+
+    `VI` must be either `Vec<Repartition<int8_t, DFromV<V>>>` or
+    `Vec<Repartition<uint8_t, DFromV<V>>>`.
+
+    `MultiRotateRight(V vals, VI indices)` is equivalent to the following loop (where `N` is
+    equal to `Lanes(DFromV<V>())`):
+    ```
+    for(size_t i = 0; i < N; i++) {
+      uint64_t shift_result = 0;
+      for(int j = 0; j < 8; j++) {
+        uint64_t rot_result =
+          (static_cast<uint64_t>(v[i]) >> indices[i*8+j]) |
+          (static_cast<uint64_t>(v[i]) << ((-indices[i*8+j]) & 63));
+#if HWY_IS_LITTLE_ENDIAN
+        shift_result |= (rot_result & 0xff) << (j * 8);
+#else
+        shift_result |= (rot_result & 0xff) << ((j ^ 7) * 8);
+#endif
+      }
+      r[i] = shift_result;
+    }
+    ```
+
+#### Masked Shifts
+*   `V`: `{u,i}` \
+    <code>V **MaskedShiftLeft**&lt;int&gt;(M mask, V a)</code> returns `a[i] << int` or `0` if
+    `mask[i]` is false.
+
+*   `V`: `{u,i}` \
+    <code>V **MaskedShiftRight**&lt;int&gt;(M mask, V a)</code> returns `a[i] >> int` or `0` if
+    `mask[i]` is false.
+
+*   `V`: `{u,i}` \
+    <code>V **MaskedShiftRightOr**&lt;int&gt;(V no, M mask, V a)</code> returns `a[i] >> int` or `no[i]` if
+    `mask[i]` is false.
+
+*   `V`: `{u,i}` \
+    <code>V **MaskedShrOr**(V no, M mask, V a, V shifts)</code> returns `a[i] >> shifts[i]` or `no[i]` if
+    `mask[i]` is false.
 
 #### Floating-point rounding
 
@@ -1133,6 +1244,9 @@ types, and on SVE/RVV.
     <code>V **Not**(V v)</code>: returns `~v[i]`.
 
 *   <code>V **AndNot**(V a, V b)</code>: returns `~a[i] & b[i]`.
+
+*   <code>V **MaskedOr**(M m, V a, V b)</code>: returns `a[i] | b[i]`
+    or `zero` if `m[i]` is false.
 
 The following three-argument functions may be more efficient than assembling
 them from 2-argument functions:
@@ -2553,6 +2667,24 @@ more efficient on some targets.
 *   <code>T **ReduceSum**(D, V v)</code>: returns the sum of all lanes.
 *   <code>T **ReduceMin**(D, V v)</code>: returns the minimum of all lanes.
 *   <code>T **ReduceMax**(D, V v)</code>: returns the maximum of all lanes.
+
+### Masked reductions
+
+**Note**: Horizontal operations (across lanes of the same vector) such as
+reductions are slower than normal SIMD operations and are typically used outside
+critical loops.
+
+All ops in this section ignore lanes where `mask=false`. These are equivalent
+to, and potentially more efficient than, `GetLane(SumOfLanes(d,
+IfThenElseZero(m, v)))` etc. The result is implementation-defined when all mask
+elements are false.
+
+*   <code>T **MaskedReduceSum**(D, M m, V v)</code>: returns the sum of all lanes
+    where `m[i]` is `true`.
+*   <code>T **MaskedReduceMin**(D, M m, V v)</code>: returns the minimum of all
+    lanes where `m[i]` is `true`.
+*   <code>T **MaskedReduceMax**(D, M m, V v)</code>: returns the maximum of all
+    lanes where `m[i]` is `true`.
 
 ### Crypto
 

@@ -260,6 +260,12 @@ HWY_SVE_FOREACH_BF16_UNCONDITIONAL(HWY_SPECIALIZE, _, _)
       NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
     return sv##OP##_##CHAR##BITS##_x(m, a, b);                             \
   }
+// User-specified mask. Mask=false value is zero.
+#define HWY_SVE_RETV_ARGMVV_Z(BASE, CHAR, BITS, HALF, NAME, OP)            \
+  HWY_API HWY_SVE_V(BASE, BITS)                                            \
+      NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b) { \
+    return sv##OP##_##CHAR##BITS##_z(m, a, b);                             \
+  }
 
 #define HWY_SVE_RETV_ARGVVV(BASE, CHAR, BITS, HALF, NAME, OP) \
   HWY_API HWY_SVE_V(BASE, BITS)                               \
@@ -267,12 +273,17 @@ HWY_SVE_FOREACH_BF16_UNCONDITIONAL(HWY_SPECIALIZE, _, _)
            HWY_SVE_V(BASE, BITS) c) {                         \
     return sv##OP##_##CHAR##BITS(a, b, c);                    \
   }
-
 #define HWY_SVE_RETV_ARGMVVV(BASE, CHAR, BITS, HALF, NAME, OP)           \
   HWY_API HWY_SVE_V(BASE, BITS)                                          \
       NAME(svbool_t m, HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b, \
            HWY_SVE_V(BASE, BITS) c) {                                    \
     return sv##OP##_##CHAR##BITS##_x(m, a, b, c);                        \
+  }
+#define HWY_SVE_RETV_ARGMVVV_Z(BASE, CHAR, BITS, HALF, NAME, OP)           \
+  HWY_API HWY_SVE_V(BASE, BITS)                                            \
+      NAME(svbool_t m, HWY_SVE_V(BASE, BITS) mul, HWY_SVE_V(BASE, BITS) x, \
+           HWY_SVE_V(BASE, BITS) add) {                                    \
+    return sv##OP##_##CHAR##BITS##_z(m, x, mul, add);                      \
   }
 
 // ------------------------------ Lanes
@@ -763,6 +774,9 @@ HWY_API V Or(const V a, const V b) {
   return BitCast(df, Or(BitCast(du, a), BitCast(du, b)));
 }
 
+// ------------------------------ MaskedOr
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGMVV_Z, MaskedOr, orr)
+
 // ------------------------------ Xor
 
 namespace detail {
@@ -1102,6 +1116,35 @@ HWY_SVE_FOREACH_U(HWY_SVE_SHIFT_N, ShiftRight, lsr_n)
 HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_N, ShiftRight, asr_n)
 
 #undef HWY_SVE_SHIFT_N
+
+// ------------------------------ MaskedShift[Left/Right]
+
+#define HWY_SVE_SHIFT_Z(BASE, CHAR, BITS, HALF, NAME, OP)                   \
+  template <int kBits>                                                      \
+  HWY_API HWY_SVE_V(BASE, BITS) NAME(svbool_t m, HWY_SVE_V(BASE, BITS) v) { \
+    auto shifts = static_cast<HWY_SVE_T(uint, BITS)>(kBits);                \
+    return sv##OP##_##CHAR##BITS##_z(m, v, shifts);                         \
+  }
+HWY_SVE_FOREACH_UI(HWY_SVE_SHIFT_Z, MaskedShiftLeft, lsl_n)
+HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_Z, MaskedShiftRight, asr_n)
+HWY_SVE_FOREACH_U(HWY_SVE_SHIFT_Z, MaskedShiftRight, lsr_n)
+
+#undef HWY_SVE_SHIFT_Z
+
+// ------------------------------ MaskedShiftRightOr
+
+#define HWY_SVE_SHIFT_OR(BASE, CHAR, BITS, HALF, NAME, OP)                  \
+  template <int kBits>                                                      \
+  HWY_API HWY_SVE_V(BASE, BITS)                                             \
+      NAME(HWY_SVE_V(BASE, BITS) no, svbool_t m, HWY_SVE_V(BASE, BITS) v) { \
+    auto shifts = static_cast<HWY_SVE_T(uint, BITS)>(kBits);                \
+    return svsel##_##CHAR##BITS(m, sv##OP##_##CHAR##BITS##_z(m, v, shifts), \
+                                no);                                        \
+  }
+HWY_SVE_FOREACH_I(HWY_SVE_SHIFT_OR, MaskedShiftRightOr, asr_n)
+HWY_SVE_FOREACH_U(HWY_SVE_SHIFT_OR, MaskedShiftRightOr, lsr_n)
+
+#undef HWY_SVE_SHIFT_OR
 
 // ------------------------------ RotateRight
 
@@ -1678,6 +1721,7 @@ namespace detail {
     return sv##OP##_##CHAR##BITS(pg, v);                                     \
   }
 
+// TODO: Remove SumOfLanesM in favor of using MaskedReduceSum
 HWY_SVE_FOREACH_UI(HWY_SVE_REDUCE_ADD, SumOfLanesM, addv)
 HWY_SVE_FOREACH_F(HWY_SVE_REDUCE, SumOfLanesM, addv)
 
@@ -1725,6 +1769,25 @@ HWY_API TFromD<D> ReduceMax(D d, VFromD<D> v) {
   return detail::MaxOfLanesM(detail::MakeMask(d), v);
 }
 
+#ifdef HWY_NATIVE_MASKED_REDUCE_SCALAR
+#undef HWY_NATIVE_MASKED_REDUCE_SCALAR
+#else
+#define HWY_NATIVE_MASKED_REDUCE_SCALAR
+#endif
+
+template <class D, class M>
+HWY_API TFromD<D> MaskedReduceSum(D /*d*/, M m, VFromD<D> v) {
+  return detail::SumOfLanesM(m, v);
+}
+template <class D, class M>
+HWY_API TFromD<D> MaskedReduceMin(D /*d*/, M m, VFromD<D> v) {
+  return detail::MinOfLanesM(m, v);
+}
+template <class D, class M>
+HWY_API TFromD<D> MaskedReduceMax(D /*d*/, M m, VFromD<D> v) {
+  return detail::MaxOfLanesM(m, v);
+}
+
 // ------------------------------ SumOfLanes
 
 template <class D, HWY_IF_LANES_GT_D(D, 1)>
@@ -1738,6 +1801,57 @@ HWY_API VFromD<D> MinOfLanes(D d, VFromD<D> v) {
 template <class D, HWY_IF_LANES_GT_D(D, 1)>
 HWY_API VFromD<D> MaxOfLanes(D d, VFromD<D> v) {
   return Set(d, ReduceMax(d, v));
+}
+
+// ------------------------------ MaskedAdd etc. (IfThenElse)
+
+#ifdef HWY_NATIVE_ZERO_MASKED_ARITH
+#undef HWY_NATIVE_ZERO_MASKED_ARITH
+#else
+#define HWY_NATIVE_ZERO_MASKED_ARITH
+#endif
+
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV_Z, MaskedMax, max)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV_Z, MaskedAdd, add)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV_Z, MaskedSub, sub)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVV_Z, MaskedMul, mul)
+HWY_SVE_FOREACH_F(HWY_SVE_RETV_ARGMVV_Z, MaskedDiv, div)
+HWY_SVE_FOREACH_UI32(HWY_SVE_RETV_ARGMVV_Z, MaskedDiv, div)
+HWY_SVE_FOREACH_UI64(HWY_SVE_RETV_ARGMVV_Z, MaskedDiv, div)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVVV_Z, MaskedMulAdd, mad)
+HWY_SVE_FOREACH(HWY_SVE_RETV_ARGMVVV_Z, MaskedNegMulAdd, msb)
+
+// I8/U8/I16/U16 MaskedDiv is implemented after I8/U8/I16/U16 Div
+
+#if HWY_SVE_HAVE_2
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGMVV_Z, MaskedSaturatedAdd, qadd)
+HWY_SVE_FOREACH_UI(HWY_SVE_RETV_ARGMVV_Z, MaskedSaturatedSub, qsub)
+#else
+template <class V, class M>
+HWY_API V MaskedSaturatedAdd(M m, V a, V b) {
+  return IfThenElseZero(m, SaturatedAdd(a, b));
+}
+
+template <class V, class M>
+HWY_API V MaskedSaturatedSub(M m, V a, V b) {
+  return IfThenElseZero(m, SaturatedSub(a, b));
+}
+#endif
+
+template <class V, class M, typename D = DFromV<V>, HWY_IF_I16_D(D)>
+HWY_API V MaskedMulFixedPoint15(M m, V a, V b) {
+  return IfThenElseZero(m, MulFixedPoint15(a, b));
+}
+
+template <class D, class M, HWY_IF_UI32_D(D),
+          class V16 = VFromD<RepartitionToNarrow<D>>>
+HWY_API VFromD<D> MaskedWidenMulPairwiseAdd(D d32, M m, V16 a, V16 b) {
+  return IfThenElseZero(m, WidenMulPairwiseAdd(d32, a, b));
+}
+
+template <class DF, class M, HWY_IF_F32_D(DF), class VBF>
+HWY_API VFromD<DF> MaskedWidenMulPairwiseAdd(DF df, M m, VBF a, VBF b) {
+  return IfThenElseZero(m, WidenMulPairwiseAdd(df, a, b));
 }
 
 // ================================================== COMPARE
@@ -2179,7 +2293,6 @@ HWY_SVE_FOREACH(HWY_SVE_COMPARE_Z, MaskedLt, cmplt)
 HWY_SVE_FOREACH(HWY_SVE_COMPARE_Z, MaskedLe, cmple)
 
 #undef HWY_SVE_COMPARE_Z
-
 
 template <class V, class M, class D = DFromV<V>>
 HWY_API MFromD<D> MaskedGt(M m, V a, V b) {
@@ -5032,6 +5145,12 @@ HWY_API V MaskedDivOr(V no, M m, V a, V b) {
   return IfThenElse(m, Div(a, b), no);
 }
 
+template <class V, class M, HWY_IF_T_SIZE_ONE_OF_V(V, (1 << 1) | (1 << 2)),
+          HWY_IF_NOT_FLOAT_NOR_SPECIAL_V(V)>
+HWY_API V MaskedDiv(M m, V a, V b) {
+  return IfThenElseZero(m, Div(a, b));
+}
+
 // ------------------------------ Mod (Div, NegMulAdd)
 template <class V>
 HWY_API V Mod(V a, V b) {
@@ -5056,6 +5175,23 @@ HWY_API V IfNegativeThenElse(V v, V yes, V no) {
   static_assert(IsSigned<TFromV<V>>(), "Only works for signed/float");
   return IfThenElse(IsNegative(v), yes, no);
 }
+// ------------------------------ IfNegativeThenNegOrUndefIfZero
+
+#ifdef HWY_NATIVE_INTEGER_IF_NEGATIVE_THEN_NEG
+#undef HWY_NATIVE_INTEGER_IF_NEGATIVE_THEN_NEG
+#else
+#define HWY_NATIVE_INTEGER_IF_NEGATIVE_THEN_NEG
+#endif
+
+#define HWY_SVE_NEG_IF(BASE, CHAR, BITS, HALF, NAME, OP)          \
+  HWY_API HWY_SVE_V(BASE, BITS)                                   \
+      NAME(HWY_SVE_V(BASE, BITS) mask, HWY_SVE_V(BASE, BITS) v) { \
+    return sv##OP##_##CHAR##BITS##_m(v, IsNegative(mask), v);     \
+  }
+
+HWY_SVE_FOREACH_IF(HWY_SVE_NEG_IF, IfNegativeThenNegOrUndefIfZero, neg)
+
+#undef HWY_SVE_NEG_IF
 
 // ------------------------------ AverageRound (ShiftRight)
 
@@ -6131,6 +6267,29 @@ HWY_API svuint32_t WidenMulPairwiseAdd(Simd<uint32_t, N, kPow2> d32,
 #endif
 }
 
+// ------------------------------ SatWidenMulPairwiseAccumulate
+#if HWY_SVE_HAVE_2
+#define HWY_SVE_SAT_MUL_WIDEN_PW_ACC_SVE_2(BASE, CHAR, BITS, HALF, NAME, OP) \
+  template <size_t N, int kPow2>                                             \
+  HWY_API HWY_SVE_V(BASE, BITS)                                              \
+      NAME(HWY_SVE_D(BASE, BITS, N, kPow2) dw, HWY_SVE_V(BASE, HALF) a,      \
+           HWY_SVE_V(BASE, HALF) b, HWY_SVE_V(BASE, BITS) sum) {             \
+    auto product = svmlalt_##CHAR##BITS(svmullb_##CHAR##BITS(a, b), a, b);   \
+    const auto mul_overflow = IfThenElseZero(                                \
+        Eq(product, Set(dw, LimitsMin<int##BITS##_t>())), Set(dw, -1));      \
+    return SaturatedAdd(Sub(sum, And(BroadcastSignBit(sum), mul_overflow)),  \
+                        Add(product, mul_overflow));                         \
+  }
+HWY_SVE_FOREACH_UI16(HWY_SVE_SAT_MUL_WIDEN_PW_ACC_SVE_2,
+                     SatWidenMulPairwiseAccumulate, _)
+HWY_SVE_FOREACH_UI32(HWY_SVE_SAT_MUL_WIDEN_PW_ACC_SVE_2,
+                     SatWidenMulPairwiseAccumulate, _)
+HWY_SVE_FOREACH_UI64(HWY_SVE_SAT_MUL_WIDEN_PW_ACC_SVE_2,
+                     SatWidenMulPairwiseAccumulate, _)
+
+#undef HWY_SVE_SAT_MUL_WIDEN_PW_ACC_SVE_2
+#endif
+
 // ------------------------------ SatWidenMulAccumFixedPoint
 
 #if HWY_SVE_HAVE_2
@@ -6291,6 +6450,130 @@ template <class DU64, HWY_IF_U64_D(DU64)>
 HWY_API VFromD<DU64> SumOfMulQuadAccumulate(DU64 /*du64*/, svuint16_t a,
                                             svuint16_t b, svuint64_t sum) {
   return svdot_u64(sum, a, b);
+}
+
+// ------------------------------ MulComplex* / MaskedMulComplex*
+
+// Per-target flag to prevent generic_ops-inl.h from defining MulComplex*.
+#ifdef HWY_NATIVE_CPLX
+#undef HWY_NATIVE_CPLX
+#else
+#define HWY_NATIVE_CPLX
+#endif
+
+template <class V, HWY_IF_NOT_UNSIGNED(TFromV<V>)>
+HWY_API V ComplexConj(V a) {
+  return OddEven(Neg(a), a);
+}
+
+namespace detail {
+#define HWY_SVE_CPLX_FMA_ROT(BASE, CHAR, BITS, HALF, NAME, OP, ROT)      \
+  HWY_API HWY_SVE_V(BASE, BITS)                                          \
+      NAME##ROT(HWY_SVE_V(BASE, BITS) a, HWY_SVE_V(BASE, BITS) b,        \
+                HWY_SVE_V(BASE, BITS) c) {                               \
+    return sv##OP##_##CHAR##BITS##_x(HWY_SVE_PTRUE(BITS), a, b, c, ROT); \
+  }                                                                      \
+  HWY_API HWY_SVE_V(BASE, BITS)                                          \
+      NAME##Z##ROT(svbool_t m, HWY_SVE_V(BASE, BITS) a,                  \
+                   HWY_SVE_V(BASE, BITS) b, HWY_SVE_V(BASE, BITS) c) {   \
+    return sv##OP##_##CHAR##BITS##_z(m, a, b, c, ROT);                   \
+  }
+
+#define HWY_SVE_CPLX_FMA(BASE, CHAR, BITS, HALF, NAME, OP)    \
+  HWY_SVE_CPLX_FMA_ROT(BASE, CHAR, BITS, HALF, NAME, OP, 0)   \
+  HWY_SVE_CPLX_FMA_ROT(BASE, CHAR, BITS, HALF, NAME, OP, 90)  \
+  HWY_SVE_CPLX_FMA_ROT(BASE, CHAR, BITS, HALF, NAME, OP, 180) \
+  HWY_SVE_CPLX_FMA_ROT(BASE, CHAR, BITS, HALF, NAME, OP, 270)
+
+// Only SVE2 has complex multiply add for integer types
+// and these do not include masked variants
+HWY_SVE_FOREACH_F(HWY_SVE_CPLX_FMA, ComplexMulAdd, cmla)
+#undef HWY_SVE_CPLX_FMA
+#undef HWY_SVE_CPLX_FMA_ROT
+}  // namespace detail
+
+template <class V, class M, HWY_IF_FLOAT_V(V)>
+HWY_API V MaskedMulComplexConjAdd(M mask, V a, V b, V c) {
+  return detail::ComplexMulAddZ270(mask, detail::ComplexMulAddZ0(mask, c, b, a), b,
+                                a);
+}
+
+template <class V, class M, HWY_IF_FLOAT_V(V)>
+HWY_API V MaskedMulComplexConj(M mask, V a, V b) {
+  return MaskedMulComplexConjAdd(mask, a, b, Zero(DFromV<V>()));
+}
+
+template <class V, HWY_IF_FLOAT_V(V)>
+HWY_API V MulComplexAdd(V a, V b, V c) {
+  return detail::ComplexMulAdd90(detail::ComplexMulAdd0(c, a, b), a, b);
+}
+
+template <class V, HWY_IF_FLOAT_V(V)>
+HWY_API V MulComplex(V a, V b) {
+  return MulComplexAdd(a, b, Zero(DFromV<V>()));
+}
+
+template <class V, class M, HWY_IF_FLOAT_V(V)>
+HWY_API V MaskedMulComplexOr(V no, M mask, V a, V b) {
+  return IfThenElse(mask, MulComplex(a, b), no);
+}
+
+template <class V, HWY_IF_FLOAT_V(V)>
+HWY_API V MulComplexConjAdd(V a, V b, V c) {
+  return detail::ComplexMulAdd270(detail::ComplexMulAdd0(c, b, a), b, a);
+}
+
+template <class V, HWY_IF_FLOAT_V(V)>
+HWY_API V MulComplexConj(V a, V b) {
+  return MulComplexConjAdd(a, b, Zero(DFromV<V>()));
+}
+
+// TODO SVE2 does have intrinsics for integers but not masked variants
+template <class V, HWY_IF_NOT_FLOAT_V(V)>
+HWY_API V MulComplex(V a, V b) {
+  // a = u + iv, b = x + iy
+  const auto u = DupEven(a);
+  const auto v = DupOdd(a);
+  const auto x = DupEven(b);
+  const auto y = DupOdd(b);
+
+  return OddEven(MulAdd(u, y, Mul(v, x)), Sub(Mul(u, x), Mul(v, y)));
+}
+
+template <class V, HWY_IF_NOT_FLOAT_V(V)>
+HWY_API V MulComplexConj(V a, V b) {
+  // a = u + iv, b = x + iy
+  const auto u = DupEven(a);
+  const auto v = DupOdd(a);
+  const auto x = DupEven(b);
+  const auto y = DupOdd(b);
+
+  return OddEven(Sub(Mul(v, x), Mul(u, y)), MulAdd(u, x, Mul(v, y)));
+}
+
+template <class V, HWY_IF_NOT_FLOAT_V(V)>
+HWY_API V MulComplexAdd(V a, V b, V c) {
+  return Add(MulComplex(a, b), c);
+}
+
+template <class V, HWY_IF_NOT_FLOAT_V(V)>
+HWY_API V MulComplexConjAdd(V a, V b, V c) {
+  return Add(MulComplexConj(a, b), c);
+}
+
+template <class V, class M, HWY_IF_NOT_FLOAT_V(V)>
+HWY_API V MaskedMulComplexConjAdd(M mask, V a, V b, V c) {
+  return IfThenElseZero(mask, MulComplexConjAdd(a, b, c));
+}
+
+template <class V, class M, HWY_IF_NOT_FLOAT_V(V)>
+HWY_API V MaskedMulComplexConj(M mask, V a, V b) {
+  return IfThenElseZero(mask, MulComplexConj(a, b));
+}
+
+template <class V, class M, HWY_IF_NOT_FLOAT_V(V)>
+HWY_API V MaskedMulComplexOr(V no, M mask, V a, V b) {
+  return IfThenElse(mask, MulComplex(a, b), no);
 }
 
 // ------------------------------ AESRound / CLMul
@@ -6587,8 +6870,10 @@ HWY_SVE_FOREACH_UI(HWY_SVE_MASKED_LEADING_ZERO_COUNT, MaskedLeadingZeroCount,
 #undef HWY_SVE_IF_NOT_EMULATED_D
 #undef HWY_SVE_PTRUE
 #undef HWY_SVE_RETV_ARGMVV
+#undef HWY_SVE_RETV_ARGMVV_Z
 #undef HWY_SVE_RETV_ARGMV_Z
 #undef HWY_SVE_RETV_ARGMV
+#undef HWY_SVE_RETV_ARGMVV_Z
 #undef HWY_SVE_RETV_ARGPV
 #undef HWY_SVE_RETV_ARGPVN
 #undef HWY_SVE_RETV_ARGPVV
@@ -6596,6 +6881,7 @@ HWY_SVE_FOREACH_UI(HWY_SVE_MASKED_LEADING_ZERO_COUNT, MaskedLeadingZeroCount,
 #undef HWY_SVE_RETV_ARGVN
 #undef HWY_SVE_RETV_ARGVV
 #undef HWY_SVE_RETV_ARGVVV
+#undef HWY_SVE_RETV_ARGMVVV_Z
 #undef HWY_SVE_RETV_ARGMVVV
 #undef HWY_SVE_T
 #undef HWY_SVE_UNDEFINED
