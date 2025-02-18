@@ -99,6 +99,60 @@ struct TestTableLookupLanes {
   }
 };
 
+
+struct TestMaskedTableLookupLanes {
+  template <class T, class D>
+#if HWY_TARGET != HWY_SCALARWE
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const RebindToSigned<D> di;
+    using TI = TFromD<decltype(di)>;
+
+    const size_t N = Lanes(d);
+    // Select indices from N-1 counting down
+    auto indices = IndicesFromVec(
+        d, Sub(Set(di, ConvertScalarTo<TI>(N - 1)), Iota(di, 0)));
+
+    auto expected = AllocateAligned<T>(N);
+    auto expected_zero = AllocateAligned<T>(N);
+    auto bool_lanes = AllocateAligned<T>(N);
+    HWY_ASSERT(expected && expected_zero && bool_lanes);
+
+    const auto v1 = Iota(d, 5);
+    const auto v2 = Iota(d, 8);
+
+    RandomState rng;
+
+    for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
+      for (size_t i = 0; i < N; ++i) {
+        bool_lanes[i] = (Random32(&rng) & 1024) ? T(1) : T(0);
+
+        if (bool_lanes[i]) {
+          expected[i] = ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
+          expected_zero[i] =
+              ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
+        } else {
+          expected[i] = ConvertScalarTo<T>(i + 8);  // v2[i]
+          expected_zero[i] = ConvertScalarTo(0);
+        }
+      }
+
+      const Vec<D> mask_i = Load(d, bool_lanes.get());
+      const Mask<D> mask = RebindMask(d, Gt(mask_i, Zero(d)));
+      HWY_ASSERT_VEC_EQ(d, expected.get(),
+                        MaskedTableLookupLanesOr(v2, mask, v1, indices));
+      HWY_ASSERT_VEC_EQ(d, expected_zero.get(),
+                        MaskedTableLookupLanes(mask, v1, indices));
+#else
+  (void) d;
+#endif
+    }
+  }
+};
+
+HWY_NOINLINE void TestAllMaskedTableLookupLanes() {
+  ForAllTypes(ForPartialVectors<TestMaskedTableLookupLanes>());
+}
+
 HWY_NOINLINE void TestAllTableLookupLanes() {
   ForAllTypes(ForPartialVectors<TestTableLookupLanes>());
 }
@@ -194,6 +248,64 @@ HWY_NOINLINE void TestAllTwoTablesLookupLanes() {
   ForAllTypes(ForPartialVectors<TestTwoTablesLookupLanes>());
 }
 
+struct TestMaskedTwoTablesLookupLanes {
+  template <class T, class D>
+  HWY_NOINLINE void operator()(T /*unused*/, D d) {
+    const RebindToSigned<D> di;
+    using TI = TFromD<decltype(di)>;
+
+    const size_t N = Lanes(d);
+    // Select indices from N-1 counting down
+    auto idx_lower = Sub(Set(di, ConvertScalarTo<TI>(N - 1)), Iota(di, 0));
+    auto idx_upper = Add(idx_lower, Set(di, ConvertScalarTo<TI>(N)));
+    auto indices = IndicesFromVec(d, OddEven(idx_upper, idx_lower));
+
+    auto expected = AllocateAligned<T>(N);
+    auto expected_zero = AllocateAligned<T>(N);
+    auto bool_lanes = AllocateAligned<T>(N);
+    HWY_ASSERT(expected && expected_zero && bool_lanes);
+
+    const auto v1 = Iota(d, 5);
+    const auto v2 = Iota(d, 8);
+
+    RandomState rng;
+
+    for (size_t rep = 0; rep < AdjustedReps(200); ++rep) {
+      for (size_t i = 0; i < N; ++i) {
+        bool_lanes[i] = (Random32(&rng) & 1024) ? T(1) : T(0);
+
+        if (bool_lanes[i]) {
+          if (i % 2) {
+            expected[i] =
+                ConvertScalarTo<T>(N - i + 8 - 1);  // v2[N-1, N-2, ...]
+            expected_zero[i] =
+                ConvertScalarTo<T>(N - i + 8 - 1);  // v2[N-1, N-2, ...]
+          } else {
+            expected[i] =
+                ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
+            expected_zero[i] =
+                ConvertScalarTo<T>(N - i + 5 - 1);  // v1[N-1, N-2, ...]
+          }
+        } else {
+          expected[i] = ConvertScalarTo<T>(i + 5);  // v1[i]
+          expected_zero[i] = ConvertScalarTo(0);
+        }
+      }
+
+      const Vec<D> mask_i = Load(d, bool_lanes.get());
+      const Mask<D> mask = RebindMask(d, Gt(mask_i, Zero(d)));
+      HWY_ASSERT_VEC_EQ(d, expected.get(),
+                        MaskedTwoTablesLookupLanesOr(d, mask, v1, v2, indices));
+      HWY_ASSERT_VEC_EQ(d, expected_zero.get(),
+                        MaskedTwoTablesLookupLanes(d, mask, v1, v2, indices));
+    }
+  }
+};
+
+HWY_NOINLINE void TestAllMaskedTwoTablesLookupLanes() {
+  ForAllTypes(ForPartialVectors<TestMaskedTwoTablesLookupLanes>());
+}
+
 }  // namespace
 // NOLINTNEXTLINE(google-readability-namespace-comments)
 }  // namespace HWY_NAMESPACE
@@ -205,7 +317,9 @@ namespace hwy {
 namespace {
 HWY_BEFORE_TEST(HwyTableTest);
 HWY_EXPORT_AND_TEST_P(HwyTableTest, TestAllTableLookupLanes);
+HWY_EXPORT_AND_TEST_P(HwyTableTest, TestAllMaskedTableLookupLanes);
 HWY_EXPORT_AND_TEST_P(HwyTableTest, TestAllTwoTablesLookupLanes);
+HWY_EXPORT_AND_TEST_P(HwyTableTest, TestAllMaskedTwoTablesLookupLanes);
 HWY_AFTER_TEST();
 }  // namespace
 }  // namespace hwy

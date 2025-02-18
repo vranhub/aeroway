@@ -1182,6 +1182,15 @@ equivalent to, and potentially more efficient than, `And(m, IsNaN(v));` etc.
     <code>M **MaskedIsNaN**(M m, V v)</code>: returns mask indicating whether
     `v[i]` is "not a number" (unordered) or `false` if `m[i]` is false.
 
+*   `V`: `{f}` \
+    <code>M **MaskedIsInf**(M m, V v)</code>: returns mask indicating whether
+    `v[i]` is positive or negative infinity or `false` if `m[i]` is false.
+
+*   `V`: `{f}` \
+    <code>M **MaskedIsFinite**(M m, V v)</code>: returns mask indicating whether
+    `v[i]` is neither NaN nor infinity, i.e. normal, subnormal or zero or
+    `false` if `m[i]` is false. Equivalent to `Not(Or(IsNaN(v), IsInf(v)))`.
+
 ### Logical
 
 *   `V`: `{u,i}` \
@@ -2024,6 +2033,17 @@ obtain the `D` that describes the return type.
     <code>Vec&lt;D&gt; **DemoteTo**(D, V v)</code>: narrows float to half (for
     bf16, it is unspecified whether this truncates or rounds).
 
+*   `V`,`D`: (`f64,i32`), (`f32,f16`) \
+    <code>Vec&lt;D&gt; **DemoteCeilTo**(D, V v)</code>: Demotes a floating point
+    number to half-sized integral type with ceiling rounding.
+
+*   `V`,`D`: (`f64,i32`), (`f32,f16`) \
+    <code>Vec&lt;D&gt; **DemoteFloorTo**(D, V v)</code>: Demotes a floating
+    point number to half-sized integral type with floor rounding.
+
+*   <code>Vec&lt;D&gt; **MaskedDemoteTo**(M m, D d, V v)</code>: returns `v[i]`
+    demoted to `D` where m is active and returns zero otherwise.
+
 #### Single vector promotion
 
 These functions promote a half vector to a full vector. To obtain halves, use
@@ -2049,6 +2069,27 @@ These functions promote a half vector to a full vector. To obtain halves, use
     towards zero and converts the rounded value to a 64-bit signed or unsigned
     integer. Returns an implementation-defined value if the input exceeds the
     destination range.
+
+*   `V`: `f`, `D`:`{u,i,f}`\
+    <code>Vec&lt;D&gt; **PromoteCeilTo**(D, V part)</code>: rounds `part[i]`
+    up and converts the rounded value to a signed or unsigned integer.
+    Returns an implementation-defined value if the input exceeds the
+    destination range.
+
+*   `V`: `f`, `D`:`{u,i,f}`\
+    <code>Vec&lt;D&gt; **PromoteFloorTo**(D, V part)</code>: rounds `part[i]`
+    down and converts the rounded value to a signed or unsigned integer.
+    Returns an implementation-defined value if the input exceeds the
+    destination range.
+
+*   `V`: `f`, `D`:`{u,i,f}`\
+    <code>Vec&lt;D&gt; **PromoteToNearestInt **(D, V part)</code>: rounds
+    `part[i]` towards the nearest integer, with ties to even, and converts the
+    rounded value to a signed or unsigned integer. Returns an
+    implementation-defined value if the input exceeds the destination range.
+
+*   <code>Vec&lt;D&gt; **MaskedPromoteTo**(M m, D d, V v)</code>: returns `v[i]`
+    widened to `D` where m is active and returns zero otherwise.
 
 The following may be more convenient or efficient than also calling `LowerHalf`
 / `UpperHalf`:
@@ -2309,6 +2350,12 @@ Ops in this section are only available if `HWY_TARGET != HWY_SCALAR`:
     `InterleaveOdd(d, a, b)` is usually more efficient than `OddEven(b,
     DupOdd(a))`.
 
+*   <code>V **MaskedInterleaveEven**(M m, V a, V b)</code>: Performs the same
+    operation as InterleaveEven, but returns zero in lanes where `m[i]` is false.
+
+*   <code>V **MaskedInterleaveOdd**(M m, V a, V b)</code>: Performs the same
+    operation as InterleaveOdd, but returns zero in lanes where `m[i]` is false.
+
 #### Zip
 
 *   `Ret`: `MakeWide<T>`; `V`: `{u,i}{8,16,32}` \
@@ -2464,6 +2511,22 @@ The following `ReverseN` must not be called if `Lanes(D()) < N`:
     `TableLookupLanes` by loading `Lanes(d)` integer indices from `idx`, which
     must be in the range `[0, 2 * Lanes(d))` but need not be unique. The index
     type `TI` must be an integer of the same size as `TFromD<D>`.
+
+*   <code>V **MaskedTableLookupLanesOr**(V no, M m, V a, unspecified)</code> returns the
+    result of `TableLookupLanes(a, unspecified)` where `m[i]` is true, and returns
+    `no[i]` where `m[i]` is false.
+
+*   <code>V **MaskedTableLookupLanes**(M m, V a, unspecified)</code> returns
+    the result of `TableLookupLanes(a, unspecified)` where `m[i]` is true, and
+    returns zero where `m[i]` is false.
+
+*   <code>V **MaskedTwoTablesLookupLanesOr**(D d, M m, V a, V b, unspecified)</code>
+    returns the result of `TwoTablesLookupLanes(V a, V b, unspecified)` where
+    `m[i]` is true, and `a[i]` where `m[i]` is false.
+
+*   <code>V **MaskedTwoTablesLookupLanes**(D d, M m, V a, V b, unspecified)</code>
+    returns the result of `TwoTablesLookupLanes(V a, V b, unspecified)` where
+    `m[i]` is true, and zero where `m[i]` is false.
 
 *   <code>V **Per4LaneBlockShuffle**&lt;size_t kIdx3, size_t kIdx2, size_t
     kIdx1, size_t kIdx0&gt;(V v)</code> does a per 4-lane block shuffle of `v`
